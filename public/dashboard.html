@@ -79,12 +79,11 @@
     </div>
 
     <script>
-        // Hulpfunctie om zo'n mooie tabel te maken
+        // Hulpfunctie (ongewijzigd)
         function renderList(elementId, dataObj, totalCount) {
             const container = document.getElementById(elementId);
-            container.innerHTML = ''; // Leegmaken
+            container.innerHTML = ''; 
 
-            // Sorteren (Hoogste eerst) en Top 10 pakken
             const sorted = Object.entries(dataObj)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 10);
@@ -94,15 +93,19 @@
                 return;
             }
 
+            // We berekenen het percentage nu t.o.v. totaal unieke bezoekers, niet views
+            const maxVal = sorted[0][1]; // De hoogste waarde in de lijst (voor de balkjes)
+
             sorted.forEach(([label, count]) => {
-                const percentage = Math.round((count / totalCount) * 100);
+                // Balkje lengte is relatief aan de hoogste in de lijst (oogt mooier)
+                const percentage = Math.round((count / maxVal) * 100);
                 
                 const div = document.createElement('div');
                 div.className = 'list-item';
                 div.innerHTML = `
                     <div class="bar-bg" style="width: ${percentage}%"></div>
                     <span class="item-label" title="${label}">${label}</span>
-                    <span class="item-count">${count} <small style="color:#9ca3af">(${percentage}%)</small></span>
+                    <span class="item-count">${count}</span>
                 `;
                 container.appendChild(div);
             });
@@ -117,41 +120,52 @@
                 const uniqueIds = new Set();
                 const sessions = {};
                 
-                // Tellers voor de lijsten
+                // NIEUW: We gebruiken Sets in plaats van getallen
+                // Een Set kan alleen unieke waardes bevatten.
                 const counts = {
-                    pages: {},
+                    pages: {},      // { '/home': Set('visitorA', 'visitorB') }
                     referrers: {},
                     devices: {},
                     browsers: {},
-                    dates: {}
+                    dates: {}       // Voor de grafiek houden we wel even views aan (optioneel)
                 };
 
                 // 2. Data verwerken
                 data.forEach(view => {
                     uniqueIds.add(view.visitorId);
 
-                    // Sessies
+                    // Sessies logica (voor de score cards)
                     if (!sessions[view.sessionId]) sessions[view.sessionId] = { views: 0, duration: 0 };
                     sessions[view.sessionId].views++;
                     sessions[view.sessionId].duration += (view.duration || 0);
 
-                    // Tellers vullen
+                    // --- DE NIEUWE LOGICA: UNIEKE BEZOEKERS TELLEN ---
+                    
+                    // A. Pagina's
                     const p = new URL(view.url).pathname;
-                    counts.pages[p] = (counts.pages[p] || 0) + 1;
+                    if (!counts.pages[p]) counts.pages[p] = new Set();
+                    counts.pages[p].add(view.visitorId);
 
+                    // B. Referrers
                     let ref = view.referrer;
                     if (!ref || ref.includes(window.location.hostname) || ref === 'Direct') ref = 'Direct / Geen';
                     else try { ref = new URL(ref).hostname; } catch {}
-                    counts.referrers[ref] = (counts.referrers[ref] || 0) + 1;
+                    
+                    if (!counts.referrers[ref]) counts.referrers[ref] = new Set();
+                    counts.referrers[ref].add(view.visitorId);
 
-                    // NIEUW: Device & Browser (met fallback voor oude data)
+                    // C. Devices
                     const device = view.device || 'Onbekend';
-                    counts.devices[device] = (counts.devices[device] || 0) + 1;
+                    if (!counts.devices[device]) counts.devices[device] = new Set();
+                    counts.devices[device].add(view.visitorId);
 
+                    // D. Browsers
                     const browser = view.browser || 'Onbekend';
-                    counts.browsers[browser] = (counts.browsers[browser] || 0) + 1;
+                    if (!counts.browsers[browser]) counts.browsers[browser] = new Set();
+                    counts.browsers[browser].add(view.visitorId);
 
-                    // Datum
+                    // E. Datum (Grafiek laten we meestal wel op views staan, 
+                    // maar als je hier ook uniek wilt, gebruik dan ook een Set)
                     const d = new Date(view.timestamp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
                     counts.dates[d] = (counts.dates[d] || 0) + 1;
                 });
@@ -162,7 +176,6 @@
                 document.getElementById('totalVisits').innerText = totalSessions;
                 document.getElementById('viewsPerVisit').innerText = totalSessions ? (data.length / totalSessions).toFixed(1) : 0;
                 
-                // Bounce & Tijd
                 let singlePage = 0, totalDur = 0;
                 Object.values(sessions).forEach(s => { if(s.views===1) singlePage++; totalDur += s.duration; });
                 document.getElementById('bounceRate').innerText = totalSessions ? Math.round((singlePage/totalSessions)*100) + '%' : '0%';
@@ -170,21 +183,29 @@
                 const avgSec = totalSessions ? Math.round(totalDur / totalSessions) : 0;
                 document.getElementById('avgDuration').innerText = `${Math.floor(avgSec/60)}m ${avgSec%60}s`;
 
-                // 4. LIJSTEN RENDERING (Hier gebeurt de magie)
-                const totalViews = data.length;
-                renderList('pagesList', counts.pages, totalViews);
-                renderList('referrersList', counts.referrers, totalViews);
-                renderList('devicesList', counts.devices, totalViews);
-                renderList('browsersList', counts.browsers, totalViews);
+                // 4. DATA OMZETTEN VOOR DE LIJSTEN
+                // We moeten de Sets ('visitorA', 'visitorB') omzetten naar het getal 2.
+                function convertSetsToNumbers(obj) {
+                    const newObj = {};
+                    Object.keys(obj).forEach(key => {
+                        newObj[key] = obj[key].size; // .size geeft het aantal unieke items
+                    });
+                    return newObj;
+                }
 
-                // 5. Grafiek
+                renderList('pagesList', convertSetsToNumbers(counts.pages));
+                renderList('referrersList', convertSetsToNumbers(counts.referrers));
+                renderList('devicesList', convertSetsToNumbers(counts.devices));
+                renderList('browsersList', convertSetsToNumbers(counts.browsers));
+
+                // 5. Grafiek (Views over tijd)
                 const sortedDates = Object.keys(counts.dates).sort((a,b) => new Date(a) - new Date(b));
                 new Chart(document.getElementById('timeChart'), {
                     type: 'line',
                     data: {
                         labels: sortedDates,
                         datasets: [{
-                            label: 'Bezoekers',
+                            label: 'Pageviews', // Let op: dit zijn wel views gebleven
                             data: sortedDates.map(d => counts.dates[d]),
                             borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)',
                             borderWidth: 2, tension: 0.4, fill: true, pointRadius: 3
