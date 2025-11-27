@@ -5,68 +5,51 @@
     <title>Mijn Analytics Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f6f8; }
-        .container { max-width: 900px; margin: 0 auto; }
-        
-        h1 { text-align: center; color: #333; margin-bottom: 40px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background: #f9fafb; color: #374151; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { text-align: center; color: #111827; margin-bottom: 40px; font-weight: 800; }
 
-        /* De Score Cards bovenin */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            text-align: center;
-        }
-        .card h3 { margin: 0; color: #666; font-size: 14px; text-transform: uppercase; }
-        .card .number { font-size: 36px; font-weight: bold; color: #2c3e50; margin-top: 10px; }
+        /* Score Cards */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .card h3 { margin: 0; color: #6b7280; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .card .number { font-size: 36px; font-weight: 700; color: #111827; margin-top: 10px; }
 
-        /* De Grafieken */
-        .charts-wrapper {
-            display: grid;
-            grid-template-columns: 1fr; /* Mobiel eerst */
-            gap: 20px;
-        }
-        @media(min-width: 768px) {
-            .charts-wrapper { grid-template-columns: 2fr 1fr; } /* Op desktop: pagina's breed, referrers smal */
-        }
-
-        .chart-box {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
+        /* Grafieken */
+        .main-chart { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .sub-charts { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media(min-width: 768px) { .sub-charts { grid-template-columns: 1fr 1fr; } }
+        .chart-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        h4 { margin-top: 0; margin-bottom: 15px; color: #374151; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 Mijn Analytics Dashboard</h1>
+        <h1>📈 Dashboard</h1>
         
         <div class="stats-grid">
             <div class="card">
                 <h3>Totaal Pageviews</h3>
-                <div class="number" id="totalViews">0</div>
+                <div class="number" id="totalViews">...</div>
             </div>
             <div class="card">
-                <h3>Unieke Bezoekers (Vandaag)</h3>
-                <div class="number" id="uniqueVisitors">0</div>
+                <h3>Unieke Bezoekers</h3>
+                <div class="number" id="uniqueVisitors">...</div>
             </div>
         </div>
 
-        <div class="charts-wrapper">
+        <div class="main-chart">
+            <h4>Bezoekers over tijd</h4>
+            <canvas id="timeChart" height="80"></canvas>
+        </div>
+
+        <div class="sub-charts">
             <div class="chart-box">
-                <h3>Populaire Pagina's</h3>
+                <h4>Top Pagina's</h4>
                 <canvas id="pagesChart"></canvas>
             </div>
             <div class="chart-box">
-                <h3>Herkomst (Referrers)</h3>
+                <h4>Herkomst (Referrers)</h4>
                 <canvas id="referrerChart"></canvas>
             </div>
         </div>
@@ -74,82 +57,83 @@
 
     <script>
         async function loadData() {
-            // 1. Data ophalen
-            const response = await fetch('/api/stats');
-            const data = await response.json();
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
 
-            // --- BEREKENING 1: Totaal en Uniek ---
-            const totalViews = data.length;
-            
-            // De Set truc: Haal alle visitorIds op en stop ze in een Set. Dubbele verdwijnen.
-            const uniqueIds = new Set(data.map(view => view.visitorId));
-            const uniqueCount = uniqueIds.size;
+                // 1. Basis Statistieken
+                document.getElementById('totalViews').innerText = data.length;
+                const uniqueIds = new Set(data.map(view => view.visitorId));
+                document.getElementById('uniqueVisitors').innerText = uniqueIds.size;
 
-            // Zet de getallen in de HTML
-            document.getElementById('totalViews').innerText = totalViews;
-            document.getElementById('uniqueVisitors').innerText = uniqueCount;
+                // 2. Data voorbereiden voor de Grafieken
+                const urlCounts = {};
+                const refCounts = {};
+                const dateCounts = {}; // NIEUW: Voor de tijdlijn
 
+                data.forEach(view => {
+                    // URL tellen
+                    try { const p = new URL(view.url).pathname; urlCounts[p] = (urlCounts[p] || 0) + 1; } 
+                    catch { urlCounts['Onbekend'] = (urlCounts['Onbekend'] || 0) + 1; }
 
-            // --- BEREKENING 2: Pagina's Tellen ---
-            const urlCounts = {};
-            data.forEach(view => {
-                // We pakken alleen het pad, bijv "/index.html"
-                try {
-                    const cleanUrl = new URL(view.url).pathname;
-                    urlCounts[cleanUrl] = (urlCounts[cleanUrl] || 0) + 1;
-                } catch (e) {
-                    // Fallback voor als de URL data corrupt is
-                    urlCounts['Onbekend'] = (urlCounts['Onbekend'] || 0) + 1;
-                }
-            });
+                    // Referrer tellen
+                    let ref = view.referrer;
+                    if (!ref || ref.includes(window.location.hostname) || ref === 'Direct') ref = 'Direct';
+                    else try { ref = new URL(ref).hostname; } catch {}
+                    refCounts[ref] = (refCounts[ref] || 0) + 1;
 
+                    // Datum tellen (NIEUW)
+                    // We pakken de datumstring (bijv "27-11")
+                    const date = new Date(view.timestamp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+                    dateCounts[date] = (dateCounts[date] || 0) + 1;
+                });
 
-            // --- BEREKENING 3: Referrers Tellen ---
-            const refCounts = {};
-            data.forEach(view => {
-                let ref = view.referrer;
-                // Als de referrer leeg is, of jouw eigen site (localhost), noem het "Direct"
-                if (!ref || ref.includes(window.location.hostname) || ref === 'Direct') {
-                    ref = 'Direct / Eigen site';
-                } else {
-                    // Probeer alleen de domeinnaam te pakken (bijv. google.com ipv google.com/search?q=...)
-                    try {
-                        ref = new URL(ref).hostname;
-                    } catch(e) {}
-                }
-                refCounts[ref] = (refCounts[ref] || 0) + 1;
-            });
+                // --- NIEUW: De Tijdlijn Grafiek Tekenen ---
+                // We moeten de datums sorteren, anders springt de lijn heen en weer
+                const sortedDates = Object.keys(dateCounts).sort((a,b) => new Date(a) - new Date(b));
+                
+                new Chart(document.getElementById('timeChart'), {
+                    type: 'line', // LIJNGRAFIEK
+                    data: {
+                        labels: sortedDates,
+                        datasets: [{
+                            label: 'Bezoekers',
+                            data: sortedDates.map(d => dateCounts[d]),
+                            borderColor: '#4F46E5', // Mooi paars/blauw
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4, // Zorgt voor die mooie "smooth" bochtjes (Plausible stijl)
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                        plugins: { legend: { display: false } } // Verbergt het labeltje bovenin
+                    }
+                });
 
-            // --- GRAFIEKEN TEKENEN ---
-            
-            // Grafiek 1: Pagina's (Staafdiagram)
-            new Chart(document.getElementById('pagesChart'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(urlCounts),
-                    datasets: [{
-                        label: 'Views',
-                        data: Object.values(urlCounts),
-                        backgroundColor: '#3498db',
-                        borderRadius: 5
-                    }]
-                },
-                options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-            });
+                // De andere grafieken (hetzelfde als eerst)
+                new Chart(document.getElementById('pagesChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(urlCounts),
+                        datasets: [{ label: 'Views', data: Object.values(urlCounts), backgroundColor: '#3498db' }]
+                    },
+                    options: { indexAxis: 'y' } // Horizontale balken zijn vaak leesbaarder
+                });
 
-            // Grafiek 2: Referrers (Doughnut/Taart)
-            new Chart(document.getElementById('referrerChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(refCounts),
-                    datasets: [{
-                        data: Object.values(refCounts),
-                        backgroundColor: ['#2ecc71', '#e74c3c', '#9b59b6', '#f1c40f'],
-                    }]
-                }
-            });
+                new Chart(document.getElementById('referrerChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(refCounts),
+                        datasets: [{ data: Object.values(refCounts), backgroundColor: ['#2ecc71', '#e74c3c', '#9b59b6', '#f1c40f'] }]
+                    }
+                });
+
+            } catch (err) {
+                console.error("Oeps, kon data niet laden", err);
+            }
         }
-
         loadData();
     </script>
 </body>
