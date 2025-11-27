@@ -5,46 +5,31 @@
     <title>Analytics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Plausible-style CSS */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background: #f9fafb; color: #374151; }
         .container { max-width: 1100px; margin: 0 auto; }
-        
-        /* Header & Score Cards */
         h1 { margin-bottom: 30px; font-weight: 800; color: #111827; }
+        
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
         .card h3 { margin: 0; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600; letter-spacing: 0.05em; }
         .card .number { font-size: 24px; font-weight: 700; color: #111827; margin-top: 8px; }
 
-        /* De Tijdlijn Grafiek */
         .main-chart { background: white; padding: 24px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 30px; }
         
-        /* De Grid voor de Tabellen (2 kolommen op desktop) */
-        .tables-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
-        @media(min-width: 900px) { .tables-grid { grid-template-columns: 1fr 1fr; } }
-
-        /* De Tabel Styling (Plausible Look) */
+        /* Grid voor tabellen (Nu passen er meer in) */
+        .tables-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; }
+        
         .table-box { background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
         .table-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 14px; }
-        .list-item { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 10px 20px; border-bottom: 1px solid #f3f4f6; position: relative; font-size: 14px; z-index: 1;
-        }
-        /* Het balkje achter de tekst */
-        .bar-bg { 
-            position: absolute; top: 0; left: 0; bottom: 0; 
-            background-color: #eff6ff; /* Heel lichtblauw */
-            z-index: -1; 
-            transition: width 0.5s ease;
-        }
-        .item-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; font-weight: 500; }
-        .item-count { font-variant-numeric: tabular-nums; color: #4b5563; }
-        .favicon { width: 14px; height: 14px; margin-right: 8px; vertical-align: middle; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid #f3f4f6; position: relative; font-size: 14px; z-index: 1; }
+        .bar-bg { position: absolute; top: 0; left: 0; bottom: 0; background-color: #eff6ff; z-index: -1; }
+        .item-label { font-weight: 500; }
+        .item-count { color: #4b5563; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Statistieken</h1>
+        <h1>🌍 Global Analytics</h1>
         
         <div class="stats-grid">
             <div class="card"><h3>Unieke Bezoekers</h3><div class="number" id="uniqueVisitors">-</div></div>
@@ -60,53 +45,32 @@
 
         <div class="tables-grid">
             <div class="table-box">
-                <div class="table-header">Top Pagina's</div>
-                <div id="pagesList"></div>
+                <div class="table-header">Top Landen</div>
+                <div id="countriesList"></div>
             </div>
-            <div class="table-box">
-                <div class="table-header">Top Bronnen (Referrers)</div>
-                <div id="referrersList"></div>
-            </div>
-            <div class="table-box">
-                <div class="table-header">Apparaten</div>
-                <div id="devicesList"></div>
-            </div>
-            <div class="table-box">
-                <div class="table-header">Browsers</div>
-                <div id="browsersList"></div>
-            </div>
+            
+            <div class="table-box"><div class="table-header">Top Pagina's</div><div id="pagesList"></div></div>
+            <div class="table-box"><div class="table-header">Top Bronnen</div><div id="referrersList"></div></div>
+            <div class="table-box"><div class="table-header">Apparaten</div><div id="devicesList"></div></div>
+            <div class="table-box"><div class="table-header">Browsers</div><div id="browsersList"></div></div>
         </div>
     </div>
 
     <script>
-        // Hulpfunctie (ongewijzigd)
-        function renderList(elementId, dataObj, totalCount) {
+        function renderList(elementId, dataObj) {
             const container = document.getElementById(elementId);
             container.innerHTML = ''; 
-
-            const sorted = Object.entries(dataObj)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10);
-
+            const sorted = Object.entries(dataObj).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            
             if (sorted.length === 0) {
-                container.innerHTML = '<div style="padding:20px; color:#9ca3af; text-align:center;">Nog geen data</div>';
-                return;
+                container.innerHTML = '<div style="padding:20px; color:#9ca3af; text-align:center;">Nog geen data</div>'; return;
             }
-
-            // We berekenen het percentage nu t.o.v. totaal unieke bezoekers, niet views
-            const maxVal = sorted[0][1]; // De hoogste waarde in de lijst (voor de balkjes)
-
+            const maxVal = sorted[0][1]; 
             sorted.forEach(([label, count]) => {
-                // Balkje lengte is relatief aan de hoogste in de lijst (oogt mooier)
                 const percentage = Math.round((count / maxVal) * 100);
-                
                 const div = document.createElement('div');
                 div.className = 'list-item';
-                div.innerHTML = `
-                    <div class="bar-bg" style="width: ${percentage}%"></div>
-                    <span class="item-label" title="${label}">${label}</span>
-                    <span class="item-count">${count}</span>
-                `;
+                div.innerHTML = `<div class="bar-bg" style="width: ${percentage}%"></div><span class="item-label">${label}</span><span class="item-count">${count}</span>`;
                 container.appendChild(div);
             });
         }
@@ -116,61 +80,49 @@
                 const res = await fetch('/api/stats');
                 const data = await res.json();
 
-                // 1. Variabelen
                 const uniqueIds = new Set();
                 const sessions = {};
                 
-                // NIEUW: We gebruiken Sets in plaats van getallen
-                // Een Set kan alleen unieke waardes bevatten.
                 const counts = {
-                    pages: {},      // { '/home': Set('visitorA', 'visitorB') }
-                    referrers: {},
-                    devices: {},
-                    browsers: {},
-                    dates: {}       // Voor de grafiek houden we wel even views aan (optioneel)
+                    pages: {}, referrers: {}, devices: {}, browsers: {}, dates: {},
+                    countries: {} // NIEUW
                 };
 
-                // 2. Data verwerken
                 data.forEach(view => {
                     uniqueIds.add(view.visitorId);
-
-                    // Sessies logica (voor de score cards)
                     if (!sessions[view.sessionId]) sessions[view.sessionId] = { views: 0, duration: 0 };
                     sessions[view.sessionId].views++;
                     sessions[view.sessionId].duration += (view.duration || 0);
 
-                    // --- DE NIEUWE LOGICA: UNIEKE BEZOEKERS TELLEN ---
-                    
-                    // A. Pagina's
+                    // NIEUW: Landen tellen (Uniek)
+                    const country = view.country || 'Onbekend';
+                    if (!counts.countries[country]) counts.countries[country] = new Set();
+                    counts.countries[country].add(view.visitorId);
+
+                    // De rest (ook uniek)
                     const p = new URL(view.url).pathname;
                     if (!counts.pages[p]) counts.pages[p] = new Set();
                     counts.pages[p].add(view.visitorId);
 
-                    // B. Referrers
                     let ref = view.referrer;
                     if (!ref || ref.includes(window.location.hostname) || ref === 'Direct') ref = 'Direct / Geen';
                     else try { ref = new URL(ref).hostname; } catch {}
-                    
                     if (!counts.referrers[ref]) counts.referrers[ref] = new Set();
                     counts.referrers[ref].add(view.visitorId);
 
-                    // C. Devices
                     const device = view.device || 'Onbekend';
                     if (!counts.devices[device]) counts.devices[device] = new Set();
                     counts.devices[device].add(view.visitorId);
 
-                    // D. Browsers
                     const browser = view.browser || 'Onbekend';
                     if (!counts.browsers[browser]) counts.browsers[browser] = new Set();
                     counts.browsers[browser].add(view.visitorId);
 
-                    // E. Datum (Grafiek laten we meestal wel op views staan, 
-                    // maar als je hier ook uniek wilt, gebruik dan ook een Set)
                     const d = new Date(view.timestamp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
                     counts.dates[d] = (counts.dates[d] || 0) + 1;
                 });
 
-                // 3. Score Cards invullen
+                // Score Cards
                 const totalSessions = Object.keys(sessions).length;
                 document.getElementById('uniqueVisitors').innerText = uniqueIds.size;
                 document.getElementById('totalVisits').innerText = totalSessions;
@@ -179,38 +131,22 @@
                 let singlePage = 0, totalDur = 0;
                 Object.values(sessions).forEach(s => { if(s.views===1) singlePage++; totalDur += s.duration; });
                 document.getElementById('bounceRate').innerText = totalSessions ? Math.round((singlePage/totalSessions)*100) + '%' : '0%';
-                
                 const avgSec = totalSessions ? Math.round(totalDur / totalSessions) : 0;
                 document.getElementById('avgDuration').innerText = `${Math.floor(avgSec/60)}m ${avgSec%60}s`;
 
-                // 4. DATA OMZETTEN VOOR DE LIJSTEN
-                // We moeten de Sets ('visitorA', 'visitorB') omzetten naar het getal 2.
-                function convertSetsToNumbers(obj) {
-                    const newObj = {};
-                    Object.keys(obj).forEach(key => {
-                        newObj[key] = obj[key].size; // .size geeft het aantal unieke items
-                    });
-                    return newObj;
-                }
+                // Render Lists (Sets omzetten naar getallen)
+                const convert = (obj) => { const n={}; Object.keys(obj).forEach(k=>n[k]=obj[k].size); return n; };
+                
+                renderList('countriesList', convert(counts.countries)); // NIEUW
+                renderList('pagesList', convert(counts.pages));
+                renderList('referrersList', convert(counts.referrers));
+                renderList('devicesList', convert(counts.devices));
+                renderList('browsersList', convert(counts.browsers));
 
-                renderList('pagesList', convertSetsToNumbers(counts.pages));
-                renderList('referrersList', convertSetsToNumbers(counts.referrers));
-                renderList('devicesList', convertSetsToNumbers(counts.devices));
-                renderList('browsersList', convertSetsToNumbers(counts.browsers));
-
-                // 5. Grafiek (Views over tijd)
                 const sortedDates = Object.keys(counts.dates).sort((a,b) => new Date(a) - new Date(b));
                 new Chart(document.getElementById('timeChart'), {
                     type: 'line',
-                    data: {
-                        labels: sortedDates,
-                        datasets: [{
-                            label: 'Pageviews', // Let op: dit zijn wel views gebleven
-                            data: sortedDates.map(d => counts.dates[d]),
-                            borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                            borderWidth: 2, tension: 0.4, fill: true, pointRadius: 3
-                        }]
-                    },
+                    data: { labels: sortedDates, datasets: [{ label: 'Pageviews', data: sortedDates.map(d => counts.dates[d]), borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 3 }] },
                     options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
                 });
 
