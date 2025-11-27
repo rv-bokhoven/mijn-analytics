@@ -9,6 +9,7 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const { countryCodeEmoji } = require('country-code-emoji');
 
 // NIEUW: Belangrijk voor Render! 
 // Dit zorgt dat we het échte IP krijgen, niet dat van de Render load balancer.
@@ -64,10 +65,22 @@ app.post('/api/collect', async (req, res) => {
         const osName = ua.os.name || 'Onbekend';
         const deviceType = ua.device.type || 'desktop';
 
-        // IP Ophalen & Land bepalen
+// IP Ophalen & Land bepalen MET Vlaggetje
         const ip = req.ip; 
-        const geo = geoip.lookup(ip); // Zoek op in database
-        const country = geo ? geo.country : 'Onbekend'; // Geeft bijv 'NL' of null
+        const geo = geoip.lookup(ip);
+        
+        let country = 'Onbekend';
+        
+        if (geo && geo.country) {
+            try {
+                // Probeer er een vlaggetje van te maken (bijv: "🇳🇱 NL")
+                const flag = countryCodeEmoji(geo.country);
+                country = `${flag} ${geo.country}`;
+            } catch (e) {
+                // Als het vlaggetje mislukt, doe dan alleen de letters (bijv: "NL")
+                country = geo.country;
+            }
+        }
 
         const visitorId = generateDailyHash(ip, userAgent);
 
