@@ -2,210 +2,199 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Mijn Analytics Dashboard</title>
+    <title>Analytics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background: #f9fafb; color: #374151; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        h1 { text-align: center; color: #111827; margin-bottom: 40px; font-weight: 800; }
+        /* Plausible-style CSS */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background: #f9fafb; color: #374151; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        /* Header & Score Cards */
+        h1 { margin-bottom: 30px; font-weight: 800; color: #111827; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
+        .card h3 { margin: 0; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600; letter-spacing: 0.05em; }
+        .card .number { font-size: 24px; font-weight: 700; color: #111827; margin-top: 8px; }
 
-        /* Score Cards (Nu 5 stuks, responsive) */
-        .stats-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
-            gap: 15px; 
-            margin-bottom: 30px; 
+        /* De Tijdlijn Grafiek */
+        .main-chart { background: white; padding: 24px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 30px; }
+        
+        /* De Grid voor de Tabellen (2 kolommen op desktop) */
+        .tables-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media(min-width: 900px) { .tables-grid { grid-template-columns: 1fr 1fr; } }
+
+        /* De Tabel Styling (Plausible Look) */
+        .table-box { background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+        .table-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 14px; }
+        .list-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 10px 20px; border-bottom: 1px solid #f3f4f6; position: relative; font-size: 14px; z-index: 1;
         }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
-        .card h3 { margin: 0; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; min-height: 32px; display: flex; align-items: center; justify-content: center; }
-        .card .number { font-size: 28px; font-weight: 700; color: #111827; margin-top: 10px; }
-
-        /* Grafieken */
-        .main-chart { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .sub-charts { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media(min-width: 768px) { .sub-charts { grid-template-columns: 1fr 1fr; } }
-        .chart-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        h4 { margin-top: 0; margin-bottom: 15px; color: #374151; }
+        /* Het balkje achter de tekst */
+        .bar-bg { 
+            position: absolute; top: 0; left: 0; bottom: 0; 
+            background-color: #eff6ff; /* Heel lichtblauw */
+            z-index: -1; 
+            transition: width 0.5s ease;
+        }
+        .item-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; font-weight: 500; }
+        .item-count { font-variant-numeric: tabular-nums; color: #4b5563; }
+        .favicon { width: 14px; height: 14px; margin-right: 8px; vertical-align: middle; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 Dashboard</h1>
+        <h1>📊 Statistieken</h1>
         
         <div class="stats-grid">
-            <div class="card">
-                <h3>Unieke Bezoekers</h3>
-                <div class="number" id="uniqueVisitors">-</div>
-            </div>
-            <div class="card">
-                <h3>Totaal Visits</h3>
-                <div class="number" id="totalVisits">-</div>
-            </div>
-            <div class="card">
-                <h3>Pageviews / Bezoek</h3>
-                <div class="number" id="viewsPerVisit">-</div>
-            </div>
-            <div class="card">
-                <h3>Bounce Rate</h3>
-                <div class="number" id="bounceRate">-</div>
-            </div>
-            <div class="card">
-                <h3>Gem. Tijd</h3>
-                <div class="number" id="avgDuration">-</div>
-            </div>
+            <div class="card"><h3>Unieke Bezoekers</h3><div class="number" id="uniqueVisitors">-</div></div>
+            <div class="card"><h3>Totaal Visits</h3><div class="number" id="totalVisits">-</div></div>
+            <div class="card"><h3>Pageviews / Bezoek</h3><div class="number" id="viewsPerVisit">-</div></div>
+            <div class="card"><h3>Bounce Rate</h3><div class="number" id="bounceRate">-</div></div>
+            <div class="card"><h3>Gem. Tijd</h3><div class="number" id="avgDuration">-</div></div>
         </div>
 
         <div class="main-chart">
-            <h4>Bezoekers over tijd</h4>
-            <div style="height: 300px">
-                <canvas id="timeChart"></canvas>
-            </div>
+            <div style="height: 250px"><canvas id="timeChart"></canvas></div>
         </div>
 
-        <div class="sub-charts">
-            <div class="chart-box">
-                <h4>Top Pagina's</h4>
-                <canvas id="pagesChart"></canvas>
+        <div class="tables-grid">
+            <div class="table-box">
+                <div class="table-header">Top Pagina's</div>
+                <div id="pagesList"></div>
             </div>
-            <div class="chart-box">
-                <h4>Herkomst (Referrers)</h4>
-                <canvas id="referrerChart"></canvas>
+            <div class="table-box">
+                <div class="table-header">Top Bronnen (Referrers)</div>
+                <div id="referrersList"></div>
+            </div>
+            <div class="table-box">
+                <div class="table-header">Apparaten</div>
+                <div id="devicesList"></div>
+            </div>
+            <div class="table-box">
+                <div class="table-header">Browsers</div>
+                <div id="browsersList"></div>
             </div>
         </div>
     </div>
 
     <script>
+        // Hulpfunctie om zo'n mooie tabel te maken
+        function renderList(elementId, dataObj, totalCount) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = ''; // Leegmaken
+
+            // Sorteren (Hoogste eerst) en Top 10 pakken
+            const sorted = Object.entries(dataObj)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            if (sorted.length === 0) {
+                container.innerHTML = '<div style="padding:20px; color:#9ca3af; text-align:center;">Nog geen data</div>';
+                return;
+            }
+
+            sorted.forEach(([label, count]) => {
+                const percentage = Math.round((count / totalCount) * 100);
+                
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.innerHTML = `
+                    <div class="bar-bg" style="width: ${percentage}%"></div>
+                    <span class="item-label" title="${label}">${label}</span>
+                    <span class="item-count">${count} <small style="color:#9ca3af">(${percentage}%)</small></span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
         async function loadData() {
             try {
-                const response = await fetch('/api/stats');
-                const data = await response.json();
+                const res = await fetch('/api/stats');
+                const data = await res.json();
 
-                // --- VARIABELEN VOORBEREIDEN ---
+                // 1. Variabelen
                 const uniqueIds = new Set();
                 const sessions = {};
-                const urlCounts = {};
-                const refCounts = {};
-                const dateCounts = {};
+                
+                // Tellers voor de lijsten
+                const counts = {
+                    pages: {},
+                    referrers: {},
+                    devices: {},
+                    browsers: {},
+                    dates: {}
+                };
 
-                // --- DE GROTE LOOP (Alles in 1x tellen) ---
+                // 2. Data verwerken
                 data.forEach(view => {
-                    // 1. Unieke bezoekers
                     uniqueIds.add(view.visitorId);
 
-                    // 2. Sessies bouwen (Voor Bounce Rate & Tijd)
-                    if (!sessions[view.sessionId]) {
-                        sessions[view.sessionId] = { views: 0, duration: 0 };
-                    }
-                    sessions[view.sessionId].views += 1;
+                    // Sessies
+                    if (!sessions[view.sessionId]) sessions[view.sessionId] = { views: 0, duration: 0 };
+                    sessions[view.sessionId].views++;
                     sessions[view.sessionId].duration += (view.duration || 0);
 
-                    // 3. URL tellen (Voor grafiek)
-                    try { 
-                        const p = new URL(view.url).pathname; 
-                        urlCounts[p] = (urlCounts[p] || 0) + 1; 
-                    } catch { 
-                        urlCounts['Onbekend'] = (urlCounts['Onbekend'] || 0) + 1; 
-                    }
+                    // Tellers vullen
+                    const p = new URL(view.url).pathname;
+                    counts.pages[p] = (counts.pages[p] || 0) + 1;
 
-                    // 4. Referrer tellen (Voor grafiek)
                     let ref = view.referrer;
-                    if (!ref || ref.includes(window.location.hostname) || ref === 'Direct') ref = 'Direct';
+                    if (!ref || ref.includes(window.location.hostname) || ref === 'Direct') ref = 'Direct / Geen';
                     else try { ref = new URL(ref).hostname; } catch {}
-                    refCounts[ref] = (refCounts[ref] || 0) + 1;
+                    counts.referrers[ref] = (counts.referrers[ref] || 0) + 1;
 
-                    // 5. Datum tellen (Voor tijdlijn)
-                    const date = new Date(view.timestamp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
-                    dateCounts[date] = (dateCounts[date] || 0) + 1;
+                    // NIEUW: Device & Browser (met fallback voor oude data)
+                    const device = view.device || 'Onbekend';
+                    counts.devices[device] = (counts.devices[device] || 0) + 1;
+
+                    const browser = view.browser || 'Onbekend';
+                    counts.browsers[browser] = (counts.browsers[browser] || 0) + 1;
+
+                    // Datum
+                    const d = new Date(view.timestamp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+                    counts.dates[d] = (counts.dates[d] || 0) + 1;
                 });
 
-                // --- CIJFERS INVULLEN (DE KAARTJES) ---
-                
-                // Uniek
-                document.getElementById('uniqueVisitors').innerText = uniqueIds.size;
-
-                // Visits & Berekeningen
+                // 3. Score Cards invullen
                 const totalSessions = Object.keys(sessions).length;
+                document.getElementById('uniqueVisitors').innerText = uniqueIds.size;
                 document.getElementById('totalVisits').innerText = totalSessions;
+                document.getElementById('viewsPerVisit').innerText = totalSessions ? (data.length / totalSessions).toFixed(1) : 0;
+                
+                // Bounce & Tijd
+                let singlePage = 0, totalDur = 0;
+                Object.values(sessions).forEach(s => { if(s.views===1) singlePage++; totalDur += s.duration; });
+                document.getElementById('bounceRate').innerText = totalSessions ? Math.round((singlePage/totalSessions)*100) + '%' : '0%';
+                
+                const avgSec = totalSessions ? Math.round(totalDur / totalSessions) : 0;
+                document.getElementById('avgDuration').innerText = `${Math.floor(avgSec/60)}m ${avgSec%60}s`;
 
-                // Views per Visit
+                // 4. LIJSTEN RENDERING (Hier gebeurt de magie)
                 const totalViews = data.length;
-                const vpv = totalSessions ? (totalViews / totalSessions).toFixed(1) : 0;
-                document.getElementById('viewsPerVisit').innerText = vpv;
+                renderList('pagesList', counts.pages, totalViews);
+                renderList('referrersList', counts.referrers, totalViews);
+                renderList('devicesList', counts.devices, totalViews);
+                renderList('browsersList', counts.browsers, totalViews);
 
-                // Bounce Rate (Sessies met maar 1 view) & Totale duur
-                let singlePageSessions = 0;
-                let totalDuration = 0;
-                Object.values(sessions).forEach(session => {
-                    if (session.views === 1) singlePageSessions++;
-                    totalDuration += session.duration;
-                });
-                const bounceRate = totalSessions ? Math.round((singlePageSessions / totalSessions) * 100) : 0;
-                document.getElementById('bounceRate').innerText = bounceRate + '%';
-
-                // Gemiddelde Tijd
-                const avgSeconds = totalSessions ? Math.round(totalDuration / totalSessions) : 0;
-                const minutes = Math.floor(avgSeconds / 60);
-                const seconds = avgSeconds % 60;
-                document.getElementById('avgDuration').innerText = `${minutes}m ${seconds}s`;
-
-
-                // --- GRAFIEKEN TEKENEN ---
-
-                // 1. Tijdlijn
-                const sortedDates = Object.keys(dateCounts).sort((a,b) => new Date(a) - new Date(b)); // Simpele sortering
+                // 5. Grafiek
+                const sortedDates = Object.keys(counts.dates).sort((a,b) => new Date(a) - new Date(b));
                 new Chart(document.getElementById('timeChart'), {
                     type: 'line',
                     data: {
                         labels: sortedDates,
                         datasets: [{
                             label: 'Bezoekers',
-                            data: sortedDates.map(d => dateCounts[d]),
-                            borderColor: '#4F46E5',
-                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                            borderWidth: 2,
-                            tension: 0.4,
-                            fill: true
+                            data: sortedDates.map(d => counts.dates[d]),
+                            borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            borderWidth: 2, tension: 0.4, fill: true, pointRadius: 3
                         }]
                     },
-                    options: { 
-                        maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-                        plugins: { legend: { display: false } }
-                    }
+                    options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
                 });
 
-                // 2. Pagina's
-                new Chart(document.getElementById('pagesChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(urlCounts),
-                        datasets: [{ 
-                            label: 'Views', 
-                            data: Object.values(urlCounts), 
-                            backgroundColor: '#3498db',
-                            borderRadius: 4
-                        }]
-                    },
-                    options: { indexAxis: 'y' }
-                });
-
-                // 3. Referrers
-                new Chart(document.getElementById('referrerChart'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: Object.keys(refCounts),
-                        datasets: [{ 
-                            data: Object.values(refCounts), 
-                            backgroundColor: ['#2ecc71', '#e74c3c', '#9b59b6', '#f1c40f', '#34495e'] 
-                        }]
-                    }
-                });
-
-            } catch (err) {
-                console.error("Fout in dashboard:", err);
-            }
+            } catch (err) { console.error(err); }
         }
-
         loadData();
     </script>
 </body>

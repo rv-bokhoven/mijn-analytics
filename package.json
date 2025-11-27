@@ -15,6 +15,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-basic-auth": "^1.2.1",
-    "mongoose": "^9.0.0"
+    "mongoose": "^9.0.0",
+    "ua-parser-js": "^2.0.6"
   }
 }
