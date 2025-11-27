@@ -5,7 +5,7 @@ const fs = require('fs'); // NIEUW: Module om bestanden te lezen/schrijven
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const DATA_FILE = 'data.json'; // Het bestand waar we alles in opslaan
 
 app.use(cors());
