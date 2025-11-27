@@ -19,12 +19,22 @@ if (mongoURI) {
         .catch(err => console.error('❌ Database fout:', err));
 }
 
-const PageView = mongoose.model('PageView', new mongoose.Schema({
+// --- HET DATABASE MODEL ---
+
+// 1. Eerst de definitie (Het Schema)
+const PageViewSchema = new mongoose.Schema({
     visitorId: String,
+    sessionId: String,       // NIEUW: Om sessies te herkennen
     url: String,
     referrer: String,
-    timestamp: { type: Date, default: Date.now }
-}));
+    timestamp: { type: Date, default: Date.now },
+    duration: { type: Number, default: 0 } // NIEUW: Tijd op pagina
+});
+
+// 2. Dan het model maken
+// (Let op: als je server herstart en klaagt over "OverwriteModelError", 
+// gebruik dan deze veilige regel):
+const PageView = mongoose.models.PageView || mongoose.model('PageView', PageViewSchema);
 
 function generateDailyHash(ip, userAgent) {
     const secret = 'GEHEIM_' + new Date().toISOString().slice(0, 10);
@@ -41,14 +51,39 @@ app.get('/tracker.js', (req, res) => {
 });
 
 // 2. Data ontvangen (anders kan niemand data sturen)
+// Data verzamelen (Nu met ondersteuning voor Pings)
 app.post('/api/collect', async (req, res) => {
     try {
-        const { url, referrer } = req.body;
+        const { type, url, referrer, sessionId, viewId } = req.body;
+        
+        // Scenario A: Hartslag (Ping) -> Update de tijd
+        if (type === 'ping' && viewId) {
+            // Zoek de pageview en tel er 5 seconden bij op
+            await PageView.findByIdAndUpdate(viewId, { $inc: { duration: 5 } });
+            return res.status(200).json({ status: 'updated' });
+        }
+
+        // Scenario B: Nieuwe Pageview
         const userAgent = req.headers['user-agent'] || 'onbekend';
         const visitorId = generateDailyHash(req.ip, userAgent);
-        await new PageView({ visitorId, url, referrer }).save();
-        res.status(200).send('Ok');
-    } catch (error) { res.status(500).send('Error'); }
+
+        const newView = new PageView({
+            visitorId: visitorId,
+            sessionId: sessionId, // Die slaan we nu op!
+            url: url,
+            referrer: referrer || 'Direct',
+            duration: 0
+        });
+
+        const savedView = await newView.save();
+        
+        // We sturen het ID terug naar de tracker, zodat die kan pingen
+        res.status(200).json({ id: savedView._id });
+
+    } catch (error) {
+        console.error('Opslag fout:', error);
+        res.status(500).send('Error');
+    }
 });
 
 // ==========================================
