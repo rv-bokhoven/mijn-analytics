@@ -8,7 +8,7 @@
 
         // We sturen de data naar jouw server
         // Let op: als je dit live zet, moet 'http://localhost:3000' jouw echte domein worden
-        fetch('http://localhost:3000/api/collect', {
+        fetch('https://tedlytics.onrender.com/api/collect', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
