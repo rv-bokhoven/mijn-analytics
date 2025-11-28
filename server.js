@@ -26,7 +26,7 @@ if (mongoURI) {
         .catch(err => console.error('❌ Fout:', err));
 }
 
-// Schema uitgebreid met 'country'
+// Het Schema aanpassen met timestamps
 const PageViewSchema = new mongoose.Schema({
     visitorId: String,
     sessionId: String,
@@ -35,10 +35,10 @@ const PageViewSchema = new mongoose.Schema({
     browser: String,
     os: String,
     device: String,
-    country: String, // NIEUW
+    country: String,
     timestamp: { type: Date, default: Date.now },
     duration: { type: Number, default: 0 }
-});
+}, { timestamps: true }); // <--- HIER IS DE MAGIC (Let op de accolade en komma!)
 
 const PageView = mongoose.models.PageView || mongoose.model('PageView', PageViewSchema);
 
@@ -106,9 +106,54 @@ app.use(basicAuth({
     challenge: true
 }));
 
+// REAL-TIME: Hoeveel mensen zijn er NU?
+app.get('/api/realtime', async (req, res) => {
+    try {
+        // Bereken het tijdstip van 3 minuten geleden
+        const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
+
+        // Tel iedereen die ná dat tijdstip nog een update (ping/view) heeft gehad
+        // We tellen unieke sessie ID's (zodat 1 persoon met 2 tabbladen als 1 telt)
+        const activeSessions = await PageView.distinct('sessionId', {
+            updatedAt: { $gte: threeMinutesAgo }
+        });
+
+        res.json({ visitors: activeSessions.length });
+    } catch (error) {
+        res.status(500).json({ error: 'Realtime error' });
+    }
+});
+
+// Data ophalen met Datum Filter
 app.get('/api/stats', async (req, res) => {
-    const allViews = await PageView.find();
-    res.json(allViews);
+    try {
+        const { from, to } = req.query;
+        const query = {};
+
+        // Als er een datum is meegegeven, voegen we een filter toe
+        if (from || to) {
+            query.timestamp = {};
+            if (from) {
+                // $gte betekent: Greater Than or Equal (Groter of gelijk aan)
+                query.timestamp.$gte = new Date(from);
+            }
+            if (to) {
+                // $lte betekent: Less Than or Equal (Kleiner of gelijk aan)
+                // We zetten de tijd op 23:59:59 van die dag om de hele dag mee te pakken
+                const endDate = new Date(to);
+                endDate.setHours(23, 59, 59, 999);
+                query.timestamp.$lte = endDate;
+            }
+        }
+
+        // We zoeken met het filter (of leeg object als we alles willen)
+        // En we sorteren op datum (oud naar nieuw) voor de grafiek
+        const allViews = await PageView.find(query).sort({ timestamp: 1 });
+        
+        res.json(allViews);
+    } catch (error) {
+        res.status(500).json({ error: 'Kon data niet ophalen' });
+    }
 });
 
 app.use(express.static('public'));

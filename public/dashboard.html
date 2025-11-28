@@ -7,8 +7,21 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background: #f9fafb; color: #374151; }
         .container { max-width: 1100px; margin: 0 auto; }
-        h1 { margin-bottom: 30px; font-weight: 800; color: #111827; }
         
+        /* Header met Knoppen */
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+        h1 { margin: 0; font-weight: 800; color: #111827; }
+
+        /* Datum Knoppen (Pills) */
+        .filters { background: #e5e7eb; padding: 4px; border-radius: 8px; display: inline-flex; }
+        .filter-btn { 
+            border: none; background: transparent; padding: 6px 16px; border-radius: 6px; 
+            font-size: 14px; font-weight: 600; color: #4b5563; cursor: pointer; transition: all 0.2s;
+        }
+        .filter-btn:hover { color: #111827; }
+        .filter-btn.active { background: white; color: #4f46e5; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+        /* Score Cards */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
         .card h3 { margin: 0; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600; letter-spacing: 0.05em; }
@@ -16,21 +29,67 @@
 
         .main-chart { background: white; padding: 24px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 30px; }
         
-        /* Grid voor tabellen (Nu passen er meer in) */
         .tables-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; }
-        
         .table-box { background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
         .table-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 14px; }
         .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid #f3f4f6; position: relative; font-size: 14px; z-index: 1; }
-        .bar-bg { position: absolute; top: 0; left: 0; bottom: 0; background-color: #eff6ff; z-index: -1; }
-        .item-label { font-weight: 500; }
-        .item-count { color: #4b5563; }
+        .bar-bg { position: absolute; top: 0; left: 0; bottom: 0; background-color: #eff6ff; z-index: -1; transition: width 0.5s; }
+        .item-label { font-weight: 500; } .item-count { color: #4b5563; }
+        /* Real-Time Widget Styling */
+        .live-widget {
+            background: #111827; /* Donker thema voor contrast */
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .live-content { display: flex; align-items: center; gap: 15px; }
+        .live-number { font-size: 32px; font-weight: 800; line-height: 1; }
+        .live-label { text-transform: uppercase; letter-spacing: 0.05em; font-size: 12px; font-weight: 600; color: #9ca3af; }
+        
+        /* De Groene Puls */
+        .pulsating-circle {
+            width: 12px; height: 12px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            position: relative;
+        }
+        .pulsating-circle::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%; background-color: #22c55e;
+            animation: pulse 2s infinite; z-index: -1;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(3); opacity: 0; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🧸 Tedlytics</h1>
         
+        <div class="header-row">
+            <h1>🧸 Tedlytics</h1>
+            <div class="filters">
+                <button class="filter-btn active" onclick="setPeriod(7, this)">7 Dagen</button>
+                <button class="filter-btn" onclick="setPeriod(30, this)">30 Dagen</button>
+                <button class="filter-btn" onclick="setPeriod('all', this)">Alles</button>
+            </div>
+        </div>
+        <div class="live-widget">
+            <div class="live-content">
+                <div class="pulsating-circle"></div>
+                <div>
+                    <div class="live-label">Nu online</div>
+                    <div class="live-number" id="liveCount">-</div>
+                </div>
+            </div>
+            <div style="font-size: 14px; color: #9ca3af;">Live weergave</div>
+        </div>
         <div class="stats-grid">
             <div class="card"><h3>Unieke Bezoekers</h3><div class="number" id="uniqueVisitors">-</div></div>
             <div class="card"><h3>Totaal Visits</h3><div class="number" id="totalVisits">-</div></div>
@@ -39,16 +98,10 @@
             <div class="card"><h3>Gem. Tijd</h3><div class="number" id="avgDuration">-</div></div>
         </div>
 
-        <div class="main-chart">
-            <div style="height: 250px"><canvas id="timeChart"></canvas></div>
-        </div>
+        <div class="main-chart"><div style="height: 250px"><canvas id="timeChart"></canvas></div></div>
 
         <div class="tables-grid">
-            <div class="table-box">
-                <div class="table-header">Top Landen</div>
-                <div id="countriesList"></div>
-            </div>
-            
+            <div class="table-box"><div class="table-header">Top Landen</div><div id="countriesList"></div></div>
             <div class="table-box"><div class="table-header">Top Pagina's</div><div id="pagesList"></div></div>
             <div class="table-box"><div class="table-header">Top Bronnen</div><div id="referrersList"></div></div>
             <div class="table-box"><div class="table-header">Apparaten</div><div id="devicesList"></div></div>
@@ -57,36 +110,39 @@
     </div>
 
     <script>
-        function renderList(elementId, dataObj) {
-            const container = document.getElementById(elementId);
-            container.innerHTML = ''; 
-            const sorted = Object.entries(dataObj).sort((a, b) => b[1] - a[1]).slice(0, 10);
-            
-            if (sorted.length === 0) {
-                container.innerHTML = '<div style="padding:20px; color:#9ca3af; text-align:center;">Nog geen data</div>'; return;
+        let myChart = null; // Bewaren we zodat we hem kunnen vernietigen bij update
+
+        // 1. Datum Logica
+        function setPeriod(days, btn) {
+            // Update knoppen styling
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (days === 'all') {
+                loadData(); // Geen parameters = Alles
+            } else {
+                // Bereken datum van X dagen geleden
+                const date = new Date();
+                date.setDate(date.getDate() - days);
+                const from = date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+                loadData(from);
             }
-            const maxVal = sorted[0][1]; 
-            sorted.forEach(([label, count]) => {
-                const percentage = Math.round((count / maxVal) * 100);
-                const div = document.createElement('div');
-                div.className = 'list-item';
-                div.innerHTML = `<div class="bar-bg" style="width: ${percentage}%"></div><span class="item-label">${label}</span><span class="item-count">${count}</span>`;
-                container.appendChild(div);
-            });
         }
 
-        async function loadData() {
+        // 2. Data laden (nu met optionele 'from' parameter)
+        async function loadData(from = null) {
             try {
-                const res = await fetch('/api/stats');
+                // Bouw de URL
+                let url = '/api/stats';
+                if (from) url += `?from=${from}`;
+
+                const res = await fetch(url);
                 const data = await res.json();
 
+                // ... DEZELFDE VERWERKING ALS EERST ...
                 const uniqueIds = new Set();
                 const sessions = {};
-                
-                const counts = {
-                    pages: {}, referrers: {}, devices: {}, browsers: {}, dates: {},
-                    countries: {} // NIEUW
-                };
+                const counts = { pages: {}, referrers: {}, devices: {}, browsers: {}, dates: {}, countries: {} };
 
                 data.forEach(view => {
                     uniqueIds.add(view.visitorId);
@@ -94,12 +150,10 @@
                     sessions[view.sessionId].views++;
                     sessions[view.sessionId].duration += (view.duration || 0);
 
-                    // NIEUW: Landen tellen (Uniek)
                     const country = view.country || 'Onbekend';
                     if (!counts.countries[country]) counts.countries[country] = new Set();
                     counts.countries[country].add(view.visitorId);
 
-                    // De rest (ook uniek)
                     const p = new URL(view.url).pathname;
                     if (!counts.pages[p]) counts.pages[p] = new Set();
                     counts.pages[p].add(view.visitorId);
@@ -110,19 +164,19 @@
                     if (!counts.referrers[ref]) counts.referrers[ref] = new Set();
                     counts.referrers[ref].add(view.visitorId);
 
-                    const device = view.device || 'Onbekend';
-                    if (!counts.devices[device]) counts.devices[device] = new Set();
-                    counts.devices[device].add(view.visitorId);
+                    const dev = view.device || 'Onbekend';
+                    if (!counts.devices[dev]) counts.devices[dev] = new Set();
+                    counts.devices[dev].add(view.visitorId);
 
-                    const browser = view.browser || 'Onbekend';
-                    if (!counts.browsers[browser]) counts.browsers[browser] = new Set();
-                    counts.browsers[browser].add(view.visitorId);
+                    const brow = view.browser || 'Onbekend';
+                    if (!counts.browsers[brow]) counts.browsers[brow] = new Set();
+                    counts.browsers[brow].add(view.visitorId);
 
                     const d = new Date(view.timestamp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
                     counts.dates[d] = (counts.dates[d] || 0) + 1;
                 });
 
-                // Score Cards
+                // Update UI (Score cards)
                 const totalSessions = Object.keys(sessions).length;
                 document.getElementById('uniqueVisitors').innerText = uniqueIds.size;
                 document.getElementById('totalVisits').innerText = totalSessions;
@@ -134,25 +188,70 @@
                 const avgSec = totalSessions ? Math.round(totalDur / totalSessions) : 0;
                 document.getElementById('avgDuration').innerText = `${Math.floor(avgSec/60)}m ${avgSec%60}s`;
 
-                // Render Lists (Sets omzetten naar getallen)
+                // Render Lists
                 const convert = (obj) => { const n={}; Object.keys(obj).forEach(k=>n[k]=obj[k].size); return n; };
-                
-                renderList('countriesList', convert(counts.countries)); // NIEUW
+                renderList('countriesList', convert(counts.countries));
                 renderList('pagesList', convert(counts.pages));
                 renderList('referrersList', convert(counts.referrers));
                 renderList('devicesList', convert(counts.devices));
                 renderList('browsersList', convert(counts.browsers));
 
-                const sortedDates = Object.keys(counts.dates).sort((a,b) => new Date(a) - new Date(b));
-                new Chart(document.getElementById('timeChart'), {
+                // Grafiek Update (Destroy old one first!)
+                if (myChart) myChart.destroy();
+                
+                const sortedDates = Object.keys(counts.dates).sort((a,b) => new Date(a) - new Date(b)); // Sorteer hier op Datum object, niet string
+                // Kleine hack voor sorteren: we moeten de datums wel even goed parsen als we alleen '1 nov' hebben. 
+                // Maar voor nu werkt de 'key' volgorde vaak prima als de data gesorteerd uit de API komt (wat we in stap 1 deden!)
+                
+                const ctx = document.getElementById('timeChart');
+                myChart = new Chart(ctx, {
                     type: 'line',
-                    data: { labels: sortedDates, datasets: [{ label: 'Pageviews', data: sortedDates.map(d => counts.dates[d]), borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 3 }] },
+                    data: { labels: Object.keys(counts.dates), datasets: [{ label: 'Pageviews', data: Object.values(counts.dates), borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 3 }] },
                     options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
                 });
 
             } catch (err) { console.error(err); }
         }
-        loadData();
+
+        function renderList(elementId, dataObj) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = ''; 
+            const sorted = Object.entries(dataObj).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            if (sorted.length === 0) { container.innerHTML = '<div style="padding:20px; color:#9ca3af; text-align:center;">Nog geen data</div>'; return; }
+            const maxVal = sorted[0][1]; 
+            sorted.forEach(([label, count]) => {
+                const percentage = Math.round((count / maxVal) * 100);
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.innerHTML = `<div class="bar-bg" style="width: ${percentage}%"></div><span class="item-label">${label}</span><span class="item-count">${count}</span>`;
+                container.appendChild(div);
+            });
+        }
+
+        // Starten met 7 dagen
+        setPeriod(7, document.querySelector('.filter-btn'));
+        async function checkRealtime() {
+            try {
+                const res = await fetch('/api/realtime');
+                const data = await res.json();
+                
+                const el = document.getElementById('liveCount');
+                el.innerText = data.visitors;
+                
+                // Laat de titel ook veranderen! (Leuk detail)
+                if (data.visitors > 0) {
+                    document.title = `(${data.visitors}) Analytics`;
+                } else {
+                    document.title = 'Analytics';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // 1. Direct checken bij laden
+        checkRealtime();
+
+        // 2. Elke 5 seconden opnieuw checken (Polling)
+        setInterval(checkRealtime, 5000);
     </script>
 </body>
 </html>
