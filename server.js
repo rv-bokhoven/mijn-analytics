@@ -26,7 +26,6 @@ if (mongoURI) {
         .catch(err => console.error('❌ Fout:', err));
 }
 
-// Het Schema aanpassen met timestamps
 const PageViewSchema = new mongoose.Schema({
     visitorId: String,
     sessionId: String,
@@ -36,9 +35,10 @@ const PageViewSchema = new mongoose.Schema({
     os: String,
     device: String,
     country: String,
+    eventName: String, // <--- NIEUW: Hier slaan we "Klikte op Kopen" op
     timestamp: { type: Date, default: Date.now },
     duration: { type: Number, default: 0 }
-}, { timestamps: true }); // <--- HIER IS DE MAGIC (Let op de accolade en komma!)
+}, { timestamps: true });
 
 const PageView = mongoose.models.PageView || mongoose.model('PageView', PageViewSchema);
 
@@ -52,45 +52,41 @@ app.get('/tracker.js', (req, res) => res.sendFile(__dirname + '/public/tracker.j
 
 app.post('/api/collect', async (req, res) => {
     try {
-        const { type, url, referrer, sessionId, viewId } = req.body;
+        // We halen nu ook 'eventName' uit de body
+        const { type, url, referrer, sessionId, viewId, eventName } = req.body;
         
+        // 1. Ping (Update tijd)
         if (type === 'ping' && viewId) {
             await PageView.findByIdAndUpdate(viewId, { $inc: { duration: 5 } });
             return res.status(200).json({ status: 'updated' });
         }
 
+        // 2. Info verzamelen
         const userAgent = req.headers['user-agent'] || '';
         const ua = UAParser(userAgent);
         const browserName = ua.browser.name || 'Onbekend';
         const osName = ua.os.name || 'Onbekend';
         const deviceType = ua.device.type || 'desktop';
 
-// IP Ophalen & Land bepalen MET Vlaggetje
         const ip = req.ip; 
         const geo = geoip.lookup(ip);
-        
         let country = 'Onbekend';
-        
         if (geo && geo.country) {
-            try {
-                // Probeer er een vlaggetje van te maken (bijv: "🇳🇱 NL")
-                const flag = countryCodeEmoji(geo.country);
-                country = `${flag} ${geo.country}`;
-            } catch (e) {
-                // Als het vlaggetje mislukt, doe dan alleen de letters (bijv: "NL")
-                country = geo.country;
-            }
+            try { const flag = countryCodeEmoji(geo.country); country = `${flag} ${geo.country}`; } 
+            catch (e) { country = geo.country; }
         }
 
         const visitorId = generateDailyHash(ip, userAgent);
 
+        // 3. Opslaan (Nu met eventName als die er is)
         const newView = new PageView({
             visitorId, sessionId, url, 
             referrer: referrer || 'Direct',
             browser: browserName,
             os: osName,
             device: deviceType,
-            country: country, // Opslaan!
+            country: country,
+            eventName: type === 'event' ? eventName : null, // <--- HIER
             duration: 0
         });
 

@@ -1,27 +1,24 @@
 (function() {
-    // 1. Sessie Management (Bestaat zolang de tab open is)
+    // Sessie Logica
     let sessionId = sessionStorage.getItem('analytics_session_id');
     if (!sessionId) {
-        // Maak een random ID voor deze nieuwe sessie
         sessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
         sessionStorage.setItem('analytics_session_id', sessionId);
     }
+    let viewId = null;
 
-    let viewId = null; // Dit wordt het ID van de huidige pageview in de database
-
-    // 2. Functie om data te sturen
-    function sendData(type) {
+    // De functie die data stuurt
+    function sendData(type, extraData = {}) {
         const data = {
-            type: type, // 'pageview' of 'ping'
+            type: type,
             url: window.location.href,
             referrer: document.referrer,
             sessionId: sessionId,
-            viewId: viewId // Sturen we mee bij pings
+            viewId: viewId,
+            ...extraData // Hier komen eventNames in terecht
         };
 
-        // Let op: vervang JOUW-URL hieronder als je live gaat!
-        // Gebruik window.location.origin als de tracker op dezelfde server staat, 
-        // of je volledige https://... onrender url.
+        // PAS DEZE URL AAN NAAR JOUW RENDER URL!
         const apiUrl = 'https://tedlytics.onrender.com/api/collect'; 
 
         fetch(apiUrl, {
@@ -31,23 +28,25 @@
         })
         .then(res => res.json())
         .then(response => {
-            // Als we een nieuwe pageview stuurden, krijgen we een ID terug
-            if (type === 'pageview' && response.id) {
-                viewId = response.id;
-            }
+            if (type === 'pageview' && response.id) viewId = response.id;
         })
-        .catch(e => console.error('Analytics error:', e));
+        .catch(e => console.error(e));
     }
 
-    // 3. Starten maar!
+    // 1. Automatische Pageview bij laden
     window.addEventListener('load', function() {
         sendData('pageview');
-
-        // 4. De Hartslag: Elke 5 seconden een ping sturen als we een viewId hebben
+        // Hartslag
         setInterval(() => {
-            if (viewId && document.visibilityState === 'visible') {
-                sendData('ping');
-            }
+            if (viewId && document.visibilityState === 'visible') sendData('ping');
         }, 5000);
     });
+
+    // 2. NIEUW: De functie blootstellen aan de window
+    // Hierdoor kun je in je HTML zeggen: tedlytics('Klik')
+    window.tedlytics = function(eventName) {
+        console.log('Event verstuurd:', eventName);
+        sendData('event', { eventName: eventName });
+    };
+
 })();
