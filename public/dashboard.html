@@ -286,10 +286,12 @@
         }
 
         // --- HELPER: Datum formatteren (Lokale tijd) ---
+// --- HELPER: Datum formatteren ---
         function fmt(date) {
-            const offset = date.getTimezoneOffset();
-            const localDate = new Date(date.getTime() - (offset * 60 * 1000));
-            return localDate.toISOString().split('T')[0];
+            // OUD: Gecorrigeerd voor lokale tijd (veroorzaakte de fout na middernacht)
+            // NIEUW: Gewoon pure UTC gebruiken. 
+            // Hierdoor loopt je dashboard gelijk met de database.
+            return date.toISOString().split('T')[0];
         }
 
         // --- DATA OPHALEN & VERGELIJKEN (Nieuw!) ---
