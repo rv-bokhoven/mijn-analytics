@@ -29,10 +29,14 @@
             fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'omit', // <--- VOEG DEZE REGEL TOE!
                 body: JSON.stringify(data)
-            }).then(res => res.json()).then(res => {
-                if (type === 'pageview') viewId = res.id;
-            }).catch(e => console.error('Tracker Error:', e));
+            })
+            .then(res => res.json())
+            .then(response => {
+                if (type === 'pageview' && response.id) viewId = response.id;
+            })
+            .catch(e => console.error('Tracker Error:', e));
         }
     }
 

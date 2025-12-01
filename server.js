@@ -15,8 +15,14 @@ const { countryCodeEmoji } = require('country-code-emoji');
 // Dit zorgt dat we het échte IP krijgen, niet dat van de Render load balancer.
 app.set('trust proxy', true);
 
-app.use(cors());
-app.use(express.json());
+// OUD: app.use(cors());
+
+// NIEUW: Dynamische CORS instelling
+app.use(cors({
+    origin: true,       // Dit zegt: "Kopieer de origin van de bezoeker" (dus accepteer iedereen specifiek)
+    credentials: true,  // Dit zegt: "Cookies/Auth headers zijn toegestaan"
+    methods: ['GET', 'POST', 'OPTIONS'] // Sta deze acties toe
+}));
 
 // --- DATABASE ---
 const mongoURI = process.env.MONGO_URI;
