@@ -4,27 +4,30 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const basicAuth = require('express-basic-auth');
 const UAParser = require('ua-parser-js'); 
-const geoip = require('geoip-lite'); // NIEUW: De landkaart
+const geoip = require('geoip-lite');
+const { countryCodeEmoji } = require('country-code-emoji'); 
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const { countryCodeEmoji } = require('country-code-emoji');
 
-// NIEUW: Belangrijk voor Render! 
-// Dit zorgt dat we het échte IP krijgen, niet dat van de Render load balancer.
+// 1. PROXY TRUST (Voor Render/GeoIP)
 app.set('trust proxy', true);
 
-// OUD: app.use(cors());
-
-// NIEUW: Dynamische CORS instelling
+// 2. CORS (Beveiliging)
+// Dit zorgt dat je tracker mag praten met de server
 app.use(cors({
-    origin: true,       // Dit zegt: "Kopieer de origin van de bezoeker" (dus accepteer iedereen specifiek)
-    credentials: true,  // Dit zegt: "Cookies/Auth headers zijn toegestaan"
-    methods: ['GET', 'POST', 'OPTIONS'] // Sta deze acties toe
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS']
 }));
 
-// --- DATABASE ---
+// 3. BODY PARSER (DIT WAS HET PROBLEEM!) 🚨
+// Deze regel zorgt dat 'req.body' gevuld wordt met data.
+// Hij MOET boven de routes staan.
+app.use(express.json()); 
+
+// --- DATABASE VERBINDING ---
 const mongoURI = process.env.MONGO_URI;
 if (mongoURI) {
     mongoose.connect(mongoURI)
@@ -32,6 +35,7 @@ if (mongoURI) {
         .catch(err => console.error('❌ Fout:', err));
 }
 
+// --- DATAMODEL ---
 const PageViewSchema = new mongoose.Schema({
     visitorId: String,
     sessionId: String,
@@ -41,62 +45,68 @@ const PageViewSchema = new mongoose.Schema({
     os: String,
     device: String,
     country: String,
-    eventName: String, // <--- NIEUW: Hier slaan we "Klikte op Kopen" op
+    eventName: String, // Voor je custom events
     timestamp: { type: Date, default: Date.now },
     duration: { type: Number, default: 0 }
 }, { timestamps: true });
 
 const PageView = mongoose.models.PageView || mongoose.model('PageView', PageViewSchema);
 
+// --- HULPFUNCTIES ---
 function generateDailyHash(ip, userAgent) {
     const secret = 'GEHEIM_' + new Date().toISOString().slice(0, 10);
     return crypto.createHmac('sha256', secret).update(ip + userAgent).digest('hex');
 }
 
 // --- ROUTES ---
-app.get('/tracker.js', (req, res) => res.sendFile(__dirname + '/public/tracker.js'));
 
+// 1. Tracker script serveren
+app.get('/tracker.js', (req, res) => {
+    res.sendFile(__dirname + '/public/tracker.js');
+});
+
+// 2. Data Verzamelen (Het hart van het systeem)
 app.post('/api/collect', async (req, res) => {
     try {
+        // Dubbele check: als req.body leeg is, stop dan direct om crash te voorkomen
+        if (!req.body) {
+            return res.status(400).json({ error: 'Geen data ontvangen' });
+        }
+
         const { type, url, referrer, sessionId, viewId, eventName } = req.body;
         
-        // 1. Ping (Update tijd)
+        // Ping (Tijd update)
         if (type === 'ping' && viewId) {
             await PageView.findByIdAndUpdate(viewId, { $inc: { duration: 5 } });
             return res.status(200).json({ status: 'updated' });
         }
 
-        // 2. Info verzamelen
+        // Info verzamelen
         const userAgent = req.headers['user-agent'] || '';
         const ua = UAParser(userAgent);
         const browserName = ua.browser.name || 'Onbekend';
         const osName = ua.os.name || 'Onbekend';
         const deviceType = ua.device.type || 'desktop';
 
-        // 3. GeoIP & Vlaggetjes (Robuust gemaakt)
+        // GeoIP (Veilig verpakt in try/catch)
         let country = 'Onbekend';
         try {
             const ip = req.ip; 
-            const geo = geoip.lookup(ip); // Kan null zijn op localhost
-            
+            const geo = geoip.lookup(ip);
             if (geo && geo.country) {
-                // Probeer vlaggetje
                 try { 
                     const flag = countryCodeEmoji(geo.country); 
                     country = `${flag} ${geo.country}`; 
-                } catch (emojiError) {
-                    // Als emoji faalt, pakken we gewoon de landcode
+                } catch (e) { 
                     country = geo.country; 
                 }
             }
-        } catch (geoError) {
-            console.log('GeoIP overgeslagen:', geoError.message);
-        }
+        } catch (e) { console.log('GeoIP error:', e.message); }
 
-        const ip = req.ip; // Nodig voor de hash
+        const ip = req.ip; 
         const visitorId = generateDailyHash(ip, userAgent);
 
-        // 4. Opslaan
+        // Opslaan
         const newView = new PageView({
             visitorId, sessionId, url, 
             referrer: referrer || 'Direct',
@@ -112,69 +122,50 @@ app.post('/api/collect', async (req, res) => {
         res.status(200).json({ id: savedView._id });
 
     } catch (error) {
-        // HIER ZIE JE DE ECHTE FOUT IN JE TERMINAL:
-        console.error('❌ CRASH IN /api/collect:', error);
-        
-        // Stuur netjes JSON terug ipv tekst
-        res.status(500).json({ error: 'Server error', details: error.message });
+        console.error('❌ Server Error in /api/collect:', error);
+        res.status(500).json({ error: 'Interne server fout' });
     }
 });
 
-// --- BEVEILIGD ---
+// 3. Real-Time API
+app.get('/api/realtime', async (req, res) => {
+    try {
+        const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
+        const activeSessions = await PageView.distinct('sessionId', {
+            updatedAt: { $gte: threeMinutesAgo }
+        });
+        res.json({ visitors: activeSessions.length });
+    } catch (error) { res.status(500).json({ error: 'Realtime error' }); }
+});
+
+// --- BEVEILIGD GEDEELTE (Dashboard) ---
 app.use(basicAuth({
     users: { 'admin': process.env.ADMIN_PASSWORD || 'geheim123' },
     challenge: true
 }));
 
-// REAL-TIME: Hoeveel mensen zijn er NU?
-app.get('/api/realtime', async (req, res) => {
-    try {
-        // Bereken het tijdstip van 3 minuten geleden
-        const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
-
-        // Tel iedereen die ná dat tijdstip nog een update (ping/view) heeft gehad
-        // We tellen unieke sessie ID's (zodat 1 persoon met 2 tabbladen als 1 telt)
-        const activeSessions = await PageView.distinct('sessionId', {
-            updatedAt: { $gte: threeMinutesAgo }
-        });
-
-        res.json({ visitors: activeSessions.length });
-    } catch (error) {
-        res.status(500).json({ error: 'Realtime error' });
-    }
-});
-
-// Data ophalen met Datum Filter
+// Dashboard Data API
 app.get('/api/stats', async (req, res) => {
     try {
         const { from, to } = req.query;
         const query = {};
 
-        // Als er een datum is meegegeven, voegen we een filter toe
         if (from || to) {
             query.timestamp = {};
-            if (from) {
-                // $gte betekent: Greater Than or Equal (Groter of gelijk aan)
-                query.timestamp.$gte = new Date(from);
-            }
+            if (from) query.timestamp.$gte = new Date(from);
             if (to) {
-                // $lte betekent: Less Than or Equal (Kleiner of gelijk aan)
-                // We zetten de tijd op 23:59:59 van die dag om de hele dag mee te pakken
                 const endDate = new Date(to);
                 endDate.setHours(23, 59, 59, 999);
                 query.timestamp.$lte = endDate;
             }
         }
 
-        // We zoeken met het filter (of leeg object als we alles willen)
-        // En we sorteren op datum (oud naar nieuw) voor de grafiek
         const allViews = await PageView.find(query).sort({ timestamp: 1 });
-        
         res.json(allViews);
-    } catch (error) {
-        res.status(500).json({ error: 'Kon data niet ophalen' });
-    }
+    } catch (error) { res.status(500).json({ error: 'Kon data niet ophalen' }); }
 });
 
+// Dashboard HTML serveren
 app.use(express.static('public'));
-app.listen(PORT, () => console.log(`Server draait op ${PORT}`));
+
+app.listen(PORT, () => console.log(`Analytics server draait op poort ${PORT}`));
