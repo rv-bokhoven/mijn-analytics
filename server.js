@@ -58,7 +58,6 @@ app.get('/tracker.js', (req, res) => res.sendFile(__dirname + '/public/tracker.j
 
 app.post('/api/collect', async (req, res) => {
     try {
-        // We halen nu ook 'eventName' uit de body
         const { type, url, referrer, sessionId, viewId, eventName } = req.body;
         
         // 1. Ping (Update tijd)
@@ -74,17 +73,30 @@ app.post('/api/collect', async (req, res) => {
         const osName = ua.os.name || 'Onbekend';
         const deviceType = ua.device.type || 'desktop';
 
-        const ip = req.ip; 
-        const geo = geoip.lookup(ip);
+        // 3. GeoIP & Vlaggetjes (Robuust gemaakt)
         let country = 'Onbekend';
-        if (geo && geo.country) {
-            try { const flag = countryCodeEmoji(geo.country); country = `${flag} ${geo.country}`; } 
-            catch (e) { country = geo.country; }
+        try {
+            const ip = req.ip; 
+            const geo = geoip.lookup(ip); // Kan null zijn op localhost
+            
+            if (geo && geo.country) {
+                // Probeer vlaggetje
+                try { 
+                    const flag = countryCodeEmoji(geo.country); 
+                    country = `${flag} ${geo.country}`; 
+                } catch (emojiError) {
+                    // Als emoji faalt, pakken we gewoon de landcode
+                    country = geo.country; 
+                }
+            }
+        } catch (geoError) {
+            console.log('GeoIP overgeslagen:', geoError.message);
         }
 
+        const ip = req.ip; // Nodig voor de hash
         const visitorId = generateDailyHash(ip, userAgent);
 
-        // 3. Opslaan (Nu met eventName als die er is)
+        // 4. Opslaan
         const newView = new PageView({
             visitorId, sessionId, url, 
             referrer: referrer || 'Direct',
@@ -92,14 +104,20 @@ app.post('/api/collect', async (req, res) => {
             os: osName,
             device: deviceType,
             country: country,
-            eventName: type === 'event' ? eventName : null, // <--- HIER
+            eventName: type === 'event' ? eventName : null,
             duration: 0
         });
 
         const savedView = await newView.save();
         res.status(200).json({ id: savedView._id });
 
-    } catch (error) { res.status(500).send('Error'); }
+    } catch (error) {
+        // HIER ZIE JE DE ECHTE FOUT IN JE TERMINAL:
+        console.error('❌ CRASH IN /api/collect:', error);
+        
+        // Stuur netjes JSON terug ipv tekst
+        res.status(500).json({ error: 'Server error', details: error.message });
+    }
 });
 
 // --- BEVEILIGD ---
