@@ -17,14 +17,14 @@
     <style>
         /* Animaties & Badges */
         @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
-        .pulsing-dot { position: relative; display: flex; align-items: center; justify-content: center; width: 12px; height: 12px; }
+        .pulsing-dot { position: relative; display: flex; align-items: center; justify-content: center; width: 10px; height: 10px; }
         .pulsing-dot::before { content: ''; position: absolute; width: 100%; height: 100%; background-color: #22c55e; border-radius: 50%; z-index: 2; }
         .pulsing-dot::after { content: ''; position: absolute; width: 100%; height: 100%; background-color: #22c55e; border-radius: 50%; animation: pulse-ring 2s infinite; z-index: 1; }
         
         .metric-tab.active { background-color: #F8FAFC; border-bottom: 3px solid #4F46E5; }
         .metric-tab.active p.label { color: #4F46E5; }
         
-        .trend-badge { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-left: 8px; vertical-align: middle; }
+        .trend-badge { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 600; margin-left: 6px; vertical-align: middle; }
         .trend-up { background-color: #DCFCE7; color: #166534; } 
         .trend-down { background-color: #FEE2E2; color: #991B1B; } 
         .trend-neutral { background-color: #F3F4F6; color: #6B7280; }
@@ -32,23 +32,18 @@
 </head>
 <body class="text-slate-800 font-sans antialiased">
 
-    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-3">
-                    <span class="font-bold text-xl tracking-tight text-slate-900">Analytics</span>
-                </div>
-                <div class="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-md">
-                    <div class="pulsing-dot mr-1"></div><span id="liveCount">0</span><span class="text-slate-400 text-xs uppercase tracking-wide ml-1">Live</span>
-                </div>
-            </div>
-        </div>
-    </nav>
-
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <h2 class="text-2xl font-bold text-slate-800">Overzicht</h2>
+        <div class="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-white border border-slate-200 rounded-lg flex items-center justify-center shadow-sm text-xl">📊</div>
+                <div class="flex flex-col">
+                    <h1 class="text-xl font-bold text-slate-900 leading-tight">Mijn Website</h1>
+                    <div class="flex items-center gap-2 mt-1">
+                        <div class="pulsing-dot"></div><span class="text-sm font-medium text-slate-600"><span id="liveCount" class="font-bold text-slate-900">0</span> live bezoekers</span>
+                    </div>
+                </div>
+            </div>
             <div class="bg-white p-1 rounded-lg border border-slate-200 shadow-sm flex flex-wrap gap-1">
                 <button onclick="setPeriod('today', this)" class="filter-btn px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 transition-all">Vandaag</button>
                 <button onclick="setPeriod('yesterday', this)" class="filter-btn px-3 py-1.5 text-sm font-medium rounded-md text-slate-500 hover:text-slate-900 transition-all">Gisteren</button>
@@ -59,26 +54,30 @@
         </div>
 
         <div class="bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-200 mb-8 overflow-hidden">
-            <div class="grid grid-cols-2 md:grid-cols-5 border-b border-slate-100">
-                <div onclick="switchChart('visitors')" class="metric-tab active cursor-pointer p-6 border-r border-slate-100 border-b md:border-b-0 hover:bg-slate-50 transition-all">
-                    <p class="label text-sm font-semibold text-slate-500 mb-2">Unieke Bezoekers</p>
-                    <div class="flex items-baseline"><p class="text-3xl font-bold text-slate-900" id="uniqueVisitors">-</p><span id="trendVisitors" class="trend-badge hidden"></span></div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 border-b border-slate-100">
+                <div onclick="switchChart('visitors')" class="metric-tab active cursor-pointer p-5 border-r border-b border-slate-100 hover:bg-slate-50 transition-all">
+                    <p class="label text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Unieke Bezoekers</p>
+                    <div class="flex items-baseline"><p class="text-2xl font-bold text-slate-900" id="uniqueVisitors">-</p><span id="trendVisitors" class="trend-badge hidden"></span></div>
                 </div>
-                <div onclick="switchChart('views')" class="metric-tab cursor-pointer p-6 md:border-r border-slate-100 border-b md:border-b-0 hover:bg-slate-50 transition-all">
-                    <p class="label text-sm font-semibold text-slate-500 mb-2">Pageviews</p>
-                    <div class="flex items-baseline"><p class="text-3xl font-bold text-slate-900" id="totalViewsDisplay">-</p><span id="trendViews" class="trend-badge hidden"></span></div>
+                <div onclick="switchChart('views')" class="metric-tab cursor-pointer p-5 border-r border-b border-slate-100 hover:bg-slate-50 transition-all">
+                    <p class="label text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Total Pageviews</p>
+                    <div class="flex items-baseline"><p class="text-2xl font-bold text-slate-900" id="totalViewsDisplay">-</p><span id="trendViews" class="trend-badge hidden"></span></div>
                 </div>
-                <div class="p-6 border-r border-slate-100 border-b md:border-b-0 bg-white">
-                    <p class="label text-sm font-semibold text-slate-500 mb-2">Totaal Visits</p>
-                    <div class="flex items-baseline"><p class="text-3xl font-bold text-slate-900" id="totalVisits">-</p><span id="trendVisits" class="trend-badge hidden"></span></div>
+                <div onclick="switchChart('visits')" class="metric-tab cursor-pointer p-5 border-r border-b border-slate-100 hover:bg-slate-50 transition-all">
+                    <p class="label text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Totaal Visits</p>
+                    <div class="flex items-baseline"><p class="text-2xl font-bold text-slate-900" id="totalVisits">-</p><span id="trendVisits" class="trend-badge hidden"></span></div>
                 </div>
-                <div class="p-6 md:border-r border-slate-100 bg-white">
-                    <p class="label text-sm font-semibold text-slate-500 mb-2">Bounce Rate</p>
-                    <div class="flex items-baseline"><p class="text-3xl font-bold text-slate-900" id="bounceRate">-</p><span id="trendBounce" class="trend-badge hidden"></span></div>
+                <div class="p-5 border-r border-b border-slate-100 bg-white">
+                    <p class="label text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Views per Visit</p>
+                    <div class="flex items-baseline"><p class="text-2xl font-bold text-slate-900" id="viewsPerVisit">-</p><span id="trendVPV" class="trend-badge hidden"></span></div>
                 </div>
-                <div class="p-6 bg-white">
-                    <p class="label text-sm font-semibold text-slate-500 mb-2">Gem. Tijd</p>
-                    <div class="flex items-baseline"><p class="text-3xl font-bold text-slate-900" id="avgDuration">-</p><span id="trendDuration" class="trend-badge hidden"></span></div>
+                <div class="p-5 border-r border-b border-slate-100 bg-white">
+                    <p class="label text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Bounce Rate</p>
+                    <div class="flex items-baseline"><p class="text-2xl font-bold text-slate-900" id="bounceRate">-</p><span id="trendBounce" class="trend-badge hidden"></span></div>
+                </div>
+                <div class="p-5 border-b border-slate-100 bg-white">
+                    <p class="label text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Gem. Tijd</p>
+                    <div class="flex items-baseline"><p class="text-2xl font-bold text-slate-900" id="avgDuration">-</p><span id="trendDuration" class="trend-badge hidden"></span></div>
                 </div>
             </div>
             <div class="p-6">
@@ -89,12 +88,26 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative md:col-span-2">
-                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 to-rose-500"></div>
-                <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
-                    <h3 class="font-semibold text-slate-700">🎯 Top Doelen (Events)</h3>
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col md:col-span-2">
+                <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="font-semibold text-slate-700">Recente Bezoekers</h3>
+                    <span class="text-xs text-slate-400">Laatste 10 sessies</span>
                 </div>
-                <div id="eventsList" class="flex-1 overflow-y-auto max-h-96"></div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 border-b border-slate-100 text-xs uppercase font-semibold text-slate-500">
+                            <tr>
+                                <th class="px-5 py-3 text-left tracking-wide">Land</th>
+                                <th class="px-5 py-3 text-left tracking-wide">Status / Pagina</th>
+                                <th class="px-5 py-3 text-left tracking-wide">Apparaat</th>
+                                <th class="px-5 py-3 text-left tracking-wide">Browser</th>
+                                <th class="px-5 py-3 text-right tracking-wide">Tijd op site</th>
+                                <th class="px-5 py-3 text-right tracking-wide">Tijdstip</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitorLogBody" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
@@ -120,144 +133,79 @@
                 <div id="deviceContainer" class="flex-1 overflow-y-auto max-h-96"></div>
             </div>
 
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative md:col-span-2">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 to-rose-500"></div>
+                <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50"><h3 class="font-semibold text-slate-700">🎯 Top Doelen (Events)</h3></div>
+                <div id="eventsList" class="flex-1 overflow-y-auto max-h-96"></div>
+            </div>
+
         </div>
-        
         <div class="mt-12 mb-6 text-center text-xs text-slate-400">Analytics powered by your own Node.js server.</div>
     </main>
 
     <script>
         let myChart = null;
-        let chartDataVisitors = {}, chartDataViews = {};
+        let chartDataVisitors = {}, chartDataViews = {}, chartDataVisits = {};
         let currentMetric = 'visitors';
         let loadedDeviceData = { browsers: {}, devices: {} }; 
         let currentDeviceTab = 'browsers';
 
-        // --- ICON HELPERS ---
-        function getBrowserIconPath(label) {
-            const name = label.toLowerCase();
-            // Zorg dat deze bestanden in /public/icons/ staan!
-            if (name.includes('chrome')) return '/icons/chrome.svg';
-            if (name.includes('safari')) return '/icons/safari.svg';
-            if (name.includes('firefox')) return '/icons/firefox.svg';
-            if (name.includes('edge')) return '/icons/edge.svg';
-            if (name.includes('opera')) return '/icons/opera.svg';
-            if (name.includes('samsung')) return '/icons/samsung.svg';
-            if (name.includes('android')) return '/icons/android.svg';
-            return null;
+        function getBrowserIconPath(label) { const name = label.toLowerCase(); if (name.includes('chrome')) return '/icons/chrome.svg'; if (name.includes('safari')) return '/icons/safari.svg'; if (name.includes('firefox')) return '/icons/firefox.svg'; if (name.includes('edge')) return '/icons/edge.svg'; if (name.includes('opera')) return '/icons/opera.svg'; if (name.includes('samsung')) return '/icons/samsung.svg'; if (name.includes('android')) return '/icons/android.svg'; return null; }
+        function getDeviceIconSvg(label) { const l = label.toLowerCase(); const icons = { mobile: '<path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>', tablet: '<path d="M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-2 14H5V6h14v12z"/>', desktop: '<path d="M20 18c1.1 0 1.99-.9 1.99-2L22 5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2H0c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2h-4zM4 5h16v11H4V5z"/>' }; if (l.includes('mobile')) return icons.mobile; if (l.includes('tablet')) return icons.tablet; return icons.desktop; }
+
+        function renderVisitorLog(data) {
+            const tbody = document.getElementById('visitorLogBody'); tbody.innerHTML = '';
+            const sessions = {};
+            data.forEach(view => { if (!sessions[view.sessionId]) { sessions[view.sessionId] = view; } else { if (new Date(view.timestamp) > new Date(sessions[view.sessionId].timestamp)) { const oldDur = sessions[view.sessionId].duration || 0; sessions[view.sessionId] = view; sessions[view.sessionId].duration = Math.max(oldDur, view.duration || 0); } } });
+            const sortedSessions = Object.values(sessions).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
+            if (sortedSessions.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-4 text-center text-slate-400">Geen bezoekers in deze periode</td></tr>'; return; }
+
+            sortedSessions.forEach(visit => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0';
+                
+                const browserPath = getBrowserIconPath(visit.browser);
+                const browserIcon = browserPath ? `<img src="${browserPath}" class="w-4 h-4 object-contain mr-2 block">` : '';
+                const deviceIcon = `<svg class="w-4 h-4 fill-slate-400 mr-2 block" viewBox="0 0 24 24">${getDeviceIconSvg(visit.device)}</svg>`;
+                
+                const visitTime = new Date(visit.timestamp);
+                const isLive = (new Date() - visitTime) < (5 * 60 * 1000);
+                const timeString = visitTime.toLocaleTimeString('nl-NL', {hour: '2-digit', minute:'2-digit'});
+                const dur = visit.duration || 0; let durString = dur < 60 ? `${dur}s` : `${Math.floor(dur/60)}m ${dur%60}s`; if (dur === 0) durString = 'net binnen';
+                const statusDot = isLive ? `<span class="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>` : `<span class="flex-shrink-0 w-2 h-2 rounded-full bg-slate-300 mr-2"></span>`;
+
+                tr.innerHTML = `<td class="px-5 py-3 align-middle whitespace-nowrap text-sm font-medium text-slate-700">${visit.country || 'Onbekend'}</td><td class="px-5 py-3 align-middle whitespace-nowrap text-sm text-slate-600"><div class="flex items-center">${statusDot}<span class="truncate max-w-[150px] inline-block" title="${visit.url}">${new URL(visit.url).pathname}</span></div></td><td class="px-5 py-3 align-middle whitespace-nowrap text-sm text-slate-600"><div class="flex items-center">${deviceIcon}<span>${visit.device}</span></div></td><td class="px-5 py-3 align-middle whitespace-nowrap text-sm text-slate-600"><div class="flex items-center">${browserIcon}<span>${visit.browser}</span></div></td><td class="px-5 py-3 align-middle whitespace-nowrap text-right text-sm font-mono text-slate-500"><div class="flex items-center justify-end"><svg class="w-3 h-3 text-slate-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${durString}</div></td><td class="px-5 py-3 align-middle whitespace-nowrap text-right text-xs text-slate-400">${timeString}</td>`;
+                tbody.appendChild(tr);
+            });
         }
 
-        function getDeviceIconSvg(label) {
-            const l = label.toLowerCase();
-            const icons = {
-                mobile: '<path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>',
-                tablet: '<path d="M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-2 14H5V6h14v12z"/>',
-                desktop: '<path d="M20 18c1.1 0 1.99-.9 1.99-2L22 5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2H0c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2h-4zM4 5h16v11H4V5z"/>'
-            };
-            if (l.includes('mobile')) return icons.mobile;
-            if (l.includes('tablet')) return icons.tablet;
-            return icons.desktop;
-        }
-
-        // --- RENDER LIST (Met perfecte uitlijning) ---
         function renderList(elementId, dataObj, listType = null) { 
-            const container = document.getElementById(elementId); 
-            container.innerHTML = ''; 
-            
+            const container = document.getElementById(elementId); container.innerHTML = ''; 
             const sorted = Object.entries(dataObj).sort((a, b) => b[1] - a[1]).slice(0, 10);
-            
-            if (sorted.length === 0) { 
-                container.innerHTML = '<div class="p-6 text-center text-slate-400 text-sm">Nog geen data beschikbaar</div>'; 
-                return; 
-            }
-            
+            if (sorted.length === 0) { container.innerHTML = '<div class="p-6 text-center text-slate-400 text-sm">Nog geen data beschikbaar</div>'; return; }
             const maxVal = sorted[0][1]; 
-            
             sorted.forEach(([label, count]) => {
                 const percentage = Math.round((count / maxVal) * 100);
                 const div = document.createElement('div');
-                
                 div.className = 'relative flex justify-between items-center px-5 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors group';
-                
-                let iconHtml = '';
-                const iconStyle = 'width: 16px; height: 16px; margin-right: 12px; object-fit: contain; display: block; flex-shrink: 0;';
-                
-                if (listType === 'browser') {
-                    const imgPath = getBrowserIconPath(label);
-                    if (imgPath) iconHtml = `<img src="${imgPath}" style="${iconStyle}" alt="">`;
-                    else iconHtml = `<svg style="${iconStyle}" class="fill-current text-slate-300" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-1.07 3.97-2.9 5.39z"/></svg>`;
-                } else if (listType === 'device') {
-                    const svgPath = getDeviceIconSvg(label);
-                    iconHtml = `<svg style="${iconStyle}" class="fill-current text-slate-400" viewBox="0 0 24 24">${svgPath}</svg>`;
-                }
-
-                div.innerHTML = `
-                    <div class="absolute top-0 left-0 bottom-0 bg-indigo-50/60 z-0 transition-all duration-500 rounded-r-md" style="width: ${percentage}%"></div>
-                    <div class="relative z-10 flex items-center min-w-0 pr-4 flex-1">
-                        ${iconHtml}
-                        <span class="text-sm font-medium text-slate-700 truncate" title="${label}">${label}</span>
-                    </div>
-                    <span class="relative z-10 text-sm text-slate-600 font-bold font-variant-numeric flex-shrink-0 ml-2">${count}</span>
-                `;
+                let iconHtml = ''; const iconStyle = 'width: 16px; height: 16px; margin-right: 12px; object-fit: contain; display: block; flex-shrink: 0;';
+                if (listType === 'browser') { const imgPath = getBrowserIconPath(label); if (imgPath) iconHtml = `<img src="${imgPath}" style="${iconStyle}" alt="">`; else iconHtml = `<svg style="${iconStyle}" class="fill-current text-slate-300" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-1.07 3.97-2.9 5.39z"/></svg>`; } else if (listType === 'device') { const svgPath = getDeviceIconSvg(label); iconHtml = `<svg style="${iconStyle}" class="fill-current text-slate-400" viewBox="0 0 24 24">${svgPath}</svg>`; }
+                div.innerHTML = `<div class="absolute top-0 left-0 bottom-0 bg-indigo-50/60 z-0 transition-all duration-500 rounded-r-md" style="width: ${percentage}%"></div><div class="relative z-10 flex items-center min-w-0 pr-4 flex-1">${iconHtml}<span class="text-sm font-medium text-slate-700 truncate" title="${label}">${label}</span></div><span class="relative z-10 text-sm text-slate-600 font-bold font-variant-numeric flex-shrink-0 ml-2">${count}</span>`;
                 container.appendChild(div);
             });
         }
 
-        // --- UI INTERACTIE ---
-        function switchChart(metric) {
-            currentMetric = metric;
-            document.querySelectorAll('.metric-tab').forEach(el => { el.classList.remove('active'); el.querySelector('.label').classList.remove('text-primary'); });
-            event.currentTarget.classList.add('active');
-            document.getElementById('chartTitle').innerText = metric === 'visitors' ? 'Verloop Unieke Bezoekers' : 'Verloop Pageviews';
-            renderChart(metric === 'visitors' ? chartDataVisitors : chartDataViews, metric);
-        }
-
-        function switchDeviceTab(tab) {
-            currentDeviceTab = tab;
-            const btnB = document.getElementById('tab-browsers');
-            const btnD = document.getElementById('tab-devices');
-            const activeClass = ['font-semibold', 'text-slate-700', 'text-base'];
-            const inactiveClass = ['font-medium', 'text-slate-400', 'text-sm'];
-
-            if (tab === 'browsers') {
-                btnB.classList.add(...activeClass); btnB.classList.remove(...inactiveClass);
-                btnD.classList.remove(...activeClass); btnD.classList.add(...inactiveClass);
-                renderList('deviceContainer', loadedDeviceData.browsers, 'browser');
-            } else {
-                btnD.classList.add(...activeClass); btnD.classList.remove(...inactiveClass);
-                btnB.classList.remove(...activeClass); btnB.classList.add(...inactiveClass);
-                renderList('deviceContainer', loadedDeviceData.devices, 'device');
-            }
-        }
-
-        // --- DATA LOGICA ---
-        function calculateMetrics(data) {
-            const uniqueIds = new Set(); const sessions = {};
-            data.forEach(view => {
-                uniqueIds.add(view.visitorId);
-                if (!sessions[view.sessionId]) sessions[view.sessionId] = { views: 0, duration: 0 };
-                sessions[view.sessionId].views++; sessions[view.sessionId].duration += (view.duration || 0);
-            });
-            const totalSessions = Object.keys(sessions).length;
-            let singlePage = 0, totalDur = 0;
-            Object.values(sessions).forEach(s => { if(s.views===1) singlePage++; totalDur += s.duration; });
-            return { visitors: uniqueIds.size, views: data.length, visits: totalSessions, bounce: totalSessions ? Math.round((singlePage/totalSessions)*100) : 0, duration: totalSessions ? Math.round(totalDur / totalSessions) : 0 };
-        }
-
-        function renderTrend(elementId, current, previous, inverse = false) {
-            const el = document.getElementById(elementId);
-            if (previous === 0) { el.classList.add('hidden'); return; }
-            el.classList.remove('hidden', 'trend-up', 'trend-down', 'trend-neutral');
-            const diff = current - previous; const percentage = Math.round((diff / previous) * 100);
-            if (percentage === 0) { el.innerText = '0%'; el.classList.add('trend-neutral'); return; }
-            const arrow = percentage > 0 ? '↑' : '↓'; el.innerText = `${arrow} ${Math.abs(percentage)}%`;
-            let isGood = percentage > 0; if (inverse) isGood = !isGood;
-            if (percentage > 0) el.classList.add(isGood ? 'trend-up' : 'trend-down'); else el.classList.add(isGood ? 'trend-up' : 'trend-down');
-        }
-
-        function processData(data) {
+        function switchChart(metric) { currentMetric = metric; document.querySelectorAll('.metric-tab').forEach(el => { el.classList.remove('active'); el.querySelector('.label').classList.remove('text-primary'); }); event.currentTarget.classList.add('active'); let title = 'Verloop'; let data = {}; if (metric === 'visitors') { title = 'Verloop Unieke Bezoekers'; data = chartDataVisitors; } else if (metric === 'views') { title = 'Verloop Total Pageviews'; data = chartDataViews; } else if (metric === 'visits') { title = 'Verloop Totaal Visits (Sessies)'; data = chartDataVisits; } document.getElementById('chartTitle').innerText = title; renderChart(data, metric); }
+        function switchDeviceTab(tab) { currentDeviceTab = tab; const btnB = document.getElementById('tab-browsers'); const btnD = document.getElementById('tab-devices'); const activeClass = ['font-semibold', 'text-slate-700', 'text-base']; const inactiveClass = ['font-medium', 'text-slate-400', 'text-sm']; if (tab === 'browsers') { btnB.classList.add(...activeClass); btnB.classList.remove(...inactiveClass); btnD.classList.remove(...activeClass); btnD.classList.add(...inactiveClass); renderList('deviceContainer', loadedDeviceData.browsers, 'browser'); } else { btnD.classList.add(...activeClass); btnD.classList.remove(...inactiveClass); btnB.classList.remove(...activeClass); btnB.classList.add(...inactiveClass); renderList('deviceContainer', loadedDeviceData.devices, 'device'); } }
+        function calculateMetrics(data) { const uniqueIds = new Set(); const sessions = {}; data.forEach(view => { uniqueIds.add(view.visitorId); if (!sessions[view.sessionId]) sessions[view.sessionId] = { views: 0, duration: 0 }; sessions[view.sessionId].views++; sessions[view.sessionId].duration += (view.duration || 0); }); const totalSessions = Object.keys(sessions).length; let singlePage = 0, totalDur = 0; Object.values(sessions).forEach(s => { if(s.views===1) singlePage++; totalDur += s.duration; }); const vpv = totalSessions ? (data.length / totalSessions).toFixed(1) : 0; return { visitors: uniqueIds.size, views: data.length, visits: totalSessions, vpv: vpv, bounce: totalSessions ? Math.round((singlePage/totalSessions)*100) : 0, duration: totalSessions ? Math.round(totalDur / totalSessions) : 0 }; }
+        function renderTrend(elementId, current, previous, inverse = false) { const el = document.getElementById(elementId); if (previous === 0) { el.classList.add('hidden'); return; } el.classList.remove('hidden', 'trend-up', 'trend-down', 'trend-neutral'); const diff = current - previous; const percentage = Math.round((diff / previous) * 100); if (percentage === 0) { el.innerText = '0%'; el.classList.add('trend-neutral'); return; } const arrow = percentage > 0 ? '↑' : '↓'; el.innerText = `${arrow} ${Math.abs(percentage)}%`; let isGood = percentage > 0; if (inverse) isGood = !isGood; if (percentage > 0) el.classList.add(isGood ? 'trend-up' : 'trend-down'); else el.classList.add(isGood ? 'trend-up' : 'trend-down'); }
+        
+        function processData(data, timeUnit = 'day') {
             const counts = { pages: {}, referrers: {}, devices: {}, browsers: {}, countries: {}, events: {} };
-            chartDataVisitors = {}; chartDataViews = {}; 
-            
+            chartDataVisitors = {}; chartDataViews = {}; chartDataVisits = {}; 
+            const chartDataVisitsTemp = {}; 
+            if (timeUnit === 'hour') { for(let i=0; i<24; i++) { const h = i.toString().padStart(2, '0') + ':00'; chartDataViews[h] = 0; chartDataVisitors[h] = new Set(); chartDataVisitsTemp[h] = new Set(); } }
+
             data.forEach(view => {
                 const country = view.country || 'Onbekend'; if(!counts.countries[country]) counts.countries[country] = new Set(); counts.countries[country].add(view.visitorId);
                 const p = new URL(view.url).pathname; if(!counts.pages[p]) counts.pages[p] = new Set(); counts.pages[p].add(view.visitorId);
@@ -266,89 +214,46 @@
                 const brow = view.browser || 'Onbekend'; if(!counts.browsers[brow]) counts.browsers[brow] = new Set(); counts.browsers[brow].add(view.visitorId);
                 if (view.eventName) { if (!counts.events[view.eventName]) counts.events[view.eventName] = new Set(); counts.events[view.eventName].add(view.visitorId); }
 
-                const d = new Date(view.timestamp).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
-                chartDataViews[d] = (chartDataViews[d] || 0) + 1;
-                if (!chartDataVisitors[d]) chartDataVisitors[d] = new Set(); chartDataVisitors[d].add(view.visitorId);
+                const dateObj = new Date(view.timestamp);
+                let key; if (timeUnit === 'hour') key = dateObj.getHours().toString().padStart(2, '0') + ':00'; else key = dateObj.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+                if (chartDataViews[key] === undefined) { chartDataViews[key] = 0; chartDataVisitors[key] = new Set(); chartDataVisitsTemp[key] = new Set(); }
+                chartDataViews[key]++; chartDataVisitors[key].add(view.visitorId); chartDataVisitsTemp[key].add(view.sessionId);
             });
 
-            Object.keys(chartDataVisitors).forEach(date => chartDataVisitors[date] = chartDataVisitors[date].size);
+            Object.keys(chartDataVisitors).forEach(k => { if(chartDataVisitors[k] instanceof Set) chartDataVisitors[k] = chartDataVisitors[k].size; });
+            Object.keys(chartDataVisitsTemp).forEach(k => { if(chartDataVisitsTemp[k] instanceof Set) chartDataVisits[k] = chartDataVisitsTemp[k].size; else chartDataVisits[k] = chartDataVisitsTemp[k]; });
+
             const convert = (obj) => { const n={}; Object.keys(obj).forEach(k=>n[k]=obj[k].size); return n; };
+            renderList('countriesList', convert(counts.countries)); renderList('pagesList', convert(counts.pages)); renderList('referrersList', convert(counts.referrers)); renderList('eventsList', convert(counts.events));
+            loadedDeviceData.browsers = convert(counts.browsers); loadedDeviceData.devices = convert(counts.devices);
             
-            renderList('countriesList', convert(counts.countries)); 
-            renderList('pagesList', convert(counts.pages)); 
-            renderList('referrersList', convert(counts.referrers));
-            renderList('eventsList', convert(counts.events));
-            
-            loadedDeviceData.browsers = convert(counts.browsers);
-            loadedDeviceData.devices = convert(counts.devices);
+            renderVisitorLog(data);
             switchDeviceTab(currentDeviceTab);
-            renderChart(currentMetric === 'visitors' ? chartDataVisitors : chartDataViews, currentMetric);
+            let dataToRender; if(currentMetric === 'visitors') dataToRender = chartDataVisitors; else if(currentMetric === 'views') dataToRender = chartDataViews; else if(currentMetric === 'visits') dataToRender = chartDataVisits;
+            renderChart(dataToRender, currentMetric);
         }
 
-        // --- HELPER: Datum formatteren (Lokale tijd) ---
-// --- HELPER: Datum formatteren ---
-        function fmt(date) {
-            // OUD: Gecorrigeerd voor lokale tijd (veroorzaakte de fout na middernacht)
-            // NIEUW: Gewoon pure UTC gebruiken. 
-            // Hierdoor loopt je dashboard gelijk met de database.
-            return date.toISOString().split('T')[0];
+        function renderChart(dataObj, metricType) { 
+            if (myChart) myChart.destroy(); 
+            const ctx = document.getElementById('mainChart'); 
+            let sortedKeys = Object.keys(dataObj); 
+            if (sortedKeys.length > 0 && sortedKeys[0].includes(':')) sortedKeys.sort(); else sortedKeys.sort((a,b) => new Date(a) - new Date(b)); 
+            let color = '#4F46E5'; if (metricType === 'views') color = '#10B981'; if (metricType === 'visits') color = '#F59E0B'; 
+            const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400); gradient.addColorStop(0, color + '33'); gradient.addColorStop(1, color + '00'); 
+            let label = 'Unieke Bezoekers'; if (metricType === 'views') label = 'Total Pageviews'; if (metricType === 'visits') label = 'Totaal Visits'; 
+            
+            myChart = new Chart(ctx, { 
+                type: 'line', 
+                data: { labels: sortedKeys, datasets: [{ label: label, data: sortedKeys.map(d => dataObj[d]), borderColor: color, backgroundColor: gradient, borderWidth: 3, tension: 0.3, fill: true, pointRadius: 0, pointHoverRadius: 6, pointHitRadius: 20, pointBackgroundColor: '#fff', pointBorderColor: color, pointBorderWidth: 2 }] }, 
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1E293B', padding: 12, titleFont: {family:'Inter', size:13}, bodyFont: {family:'Inter', size:14, weight:'bold'}, displayColors: false, intersect: false, mode: 'index' } }, scales: { y: { beginAtZero: true, suggestedMax: 5, grid: { borderDash: [4, 4], color: '#E2E8F0' }, ticks: { stepSize: 1, font: {family: 'Inter', weight:'500'}, color: '#64748B' } }, x: { grid: { display: false }, ticks: { font: {family: 'Inter', weight:'500'}, color: '#64748B', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } } }, interaction: { intersect: false, mode: 'index' } } 
+            }); 
         }
-
-        // --- DATA OPHALEN & VERGELIJKEN (Nieuw!) ---
-        function setPeriod(range, btn) {
-            document.querySelectorAll('.filter-btn').forEach(b => { b.classList.remove('text-indigo-600', 'bg-indigo-50'); b.classList.add('text-slate-500'); });
-            btn.classList.remove('text-slate-500'); btn.classList.add('text-indigo-600', 'bg-indigo-50');
-
-            const now = new Date();
-            let from = null; let to = null;
-
-            if (range === 'today') { from = fmt(now); to = fmt(now); }
-            else if (range === 'yesterday') { now.setDate(now.getDate() - 1); from = fmt(now); to = fmt(now); }
-            else if (range === 'all') { /* null */ }
-            else { to = fmt(now); now.setDate(now.getDate() - range); from = fmt(now); }
-
-            loadData(from, to);
-        }
-
-        async function loadData(from, to) {
-            try {
-                let url = '/api/stats'; if (from) url += `?from=${from}`; if (to) url += `&to=${to}`;
-                
-                let prevUrl = null;
-                if (from && to) {
-                    const startCurrent = new Date(from); const endCurrent = new Date(to);
-                    const diffTime = Math.abs(endCurrent - startCurrent);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                    const endPrev = new Date(startCurrent); endPrev.setDate(endPrev.getDate() - 1);
-                    const startPrev = new Date(endPrev); startPrev.setDate(startPrev.getDate() - (diffDays - 1));
-                    prevUrl = `/api/stats?from=${fmt(startPrev)}&to=${fmt(endPrev)}`;
-                }
-
-                const promises = [fetch(url)];
-                if (prevUrl) promises.push(fetch(prevUrl));
-                else document.querySelectorAll('.trend-badge').forEach(e => e.classList.add('hidden'));
-
-                const responses = await Promise.all(promises);
-                const currData = await responses[0].json();
-                const prevData = responses[1] ? await responses[1].json() : [];
-
-                const currStats = calculateMetrics(currData);
-                document.getElementById('uniqueVisitors').innerText = currStats.visitors; document.getElementById('totalViewsDisplay').innerText = currStats.views; document.getElementById('totalVisits').innerText = currStats.visits; document.getElementById('bounceRate').innerText = currStats.bounce + '%'; document.getElementById('avgDuration').innerText = `${Math.floor(currStats.duration/60)}m ${currStats.duration%60}s`;
-
-                if (prevData.length > 0 || (prevUrl && prevData.length === 0)) {
-                    const prevStats = calculateMetrics(prevData);
-                    renderTrend('trendVisitors', currStats.visitors, prevStats.visitors); renderTrend('trendViews', currStats.views, prevStats.views); renderTrend('trendVisits', currStats.visits, prevStats.visits); renderTrend('trendBounce', currStats.bounce, prevStats.bounce, true); renderTrend('trendDuration', currStats.duration, prevStats.duration);
-                }
-
-                processData(currData);
-            } catch (err) { console.error("Load error:", err); }
-        }
-
-        // --- GRAFIEK & REALTIME ---
-        function renderChart(dataObj, metricType) { if (myChart) myChart.destroy(); const ctx = document.getElementById('mainChart'); const sortedDates = Object.keys(dataObj).sort((a,b) => new Date(a) - new Date(b)); const color = metricType === 'visitors' ? '#4F46E5' : '#10B981'; const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400); gradient.addColorStop(0, color + '33'); gradient.addColorStop(1, color + '00'); myChart = new Chart(ctx, { type: 'line', data: { labels: sortedDates, datasets: [{ label: metricType, data: sortedDates.map(d => dataObj[d]), borderColor: color, backgroundColor: gradient, borderWidth: 3, tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: color, pointBorderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1E293B', padding: 12, titleFont: {family:'Inter', size:13}, bodyFont: {family:'Inter', size:14, weight:'bold'}, displayColors: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#E2E8F0' }, ticks: { stepSize: 1, font: {family: 'Inter', weight:'500'}, color: '#64748B' } }, x: { grid: { display: false }, ticks: { font: {family: 'Inter', weight:'500'}, color: '#64748B', maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } } }, interaction: { intersect: false, mode: 'index' } } }); }
+        
+        function fmt(date) { return date.toISOString().split('T')[0]; }
+        function setPeriod(range, btn) { document.querySelectorAll('.filter-btn').forEach(b => { b.classList.remove('text-indigo-600', 'bg-indigo-50'); b.classList.add('text-slate-500'); }); btn.classList.remove('text-slate-500'); btn.classList.add('text-indigo-600', 'bg-indigo-50'); const now = new Date(); let from = null; let to = null; let unit = 'day'; if (range === 'today') { from = fmt(now); to = fmt(now); unit = 'hour'; } else if (range === 'yesterday') { now.setDate(now.getDate() - 1); from = fmt(now); to = fmt(now); unit = 'hour'; } else if (range === 'all') { /* null */ } else { to = fmt(now); now.setDate(now.getDate() - range); from = fmt(now); } loadData(from, to, unit); }
+        async function loadData(from, to, timeUnit = 'day') { try { let url = '/api/stats'; if (from) url += `?from=${from}`; if (to) url += `&to=${to}`; let prevUrl = null; if (from && to) { const startCurrent = new Date(from); const endCurrent = new Date(to); const diffTime = Math.abs(endCurrent - startCurrent); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; const endPrev = new Date(startCurrent); endPrev.setDate(endPrev.getDate() - 1); const startPrev = new Date(endPrev); startPrev.setDate(startPrev.getDate() - (diffDays - 1)); prevUrl = `/api/stats?from=${fmt(startPrev)}&to=${fmt(endPrev)}`; } const promises = [fetch(url)]; if (prevUrl) promises.push(fetch(prevUrl)); else document.querySelectorAll('.trend-badge').forEach(e => e.classList.add('hidden')); const responses = await Promise.all(promises); const currData = await responses[0].json(); const prevData = responses[1] ? await responses[1].json() : []; const currStats = calculateMetrics(currData); const prevStats = calculateMetrics(prevData); document.getElementById('uniqueVisitors').innerText = currStats.visitors; document.getElementById('totalViewsDisplay').innerText = currStats.views; document.getElementById('totalVisits').innerText = currStats.visits; document.getElementById('viewsPerVisit').innerText = currStats.vpv; document.getElementById('bounceRate').innerText = currStats.bounce + '%'; document.getElementById('avgDuration').innerText = `${Math.floor(currStats.duration/60)}m ${currStats.duration%60}s`; if (prevData.length > 0 || (prevUrl && prevData.length === 0)) { renderTrend('trendVisitors', currStats.visitors, prevStats.visitors); renderTrend('trendViews', currStats.views, prevStats.views); renderTrend('trendVisits', currStats.visits, prevStats.visits); renderTrend('trendVPV', currStats.vpv, prevStats.vpv); renderTrend('trendBounce', currStats.bounce, prevStats.bounce, true); renderTrend('trendDuration', currStats.duration, prevStats.duration); } processData(currData, timeUnit); } catch (err) { console.error("Load error:", err); } }
         async function checkRealtime() { try { const res = await fetch('/api/realtime'); const data = await res.json(); document.getElementById('liveCount').innerText = data.visitors; if(data.visitors > 0) document.title = `(${data.visitors}) Analytics`; else document.title = 'Analytics'; } catch(e) {} }
 
-        // START (Default 7 dagen)
         const defaultBtn = document.querySelectorAll('.filter-btn')[2]; 
         setPeriod(7, defaultBtn); 
         checkRealtime(); setInterval(checkRealtime, 5000);
