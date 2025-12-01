@@ -1,5 +1,4 @@
 (function() {
-    // 1. Sessie & Basis Setup
     let sessionId = sessionStorage.getItem('analytics_session_id');
     if (!sessionId) {
         sessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -7,7 +6,7 @@
     }
     let viewId = null;
 
-    // ⚠️ PAS DIT AAN NAAR JOUW URL
+    // ⚠️ PAS DIT AAN NAAR JOUW RENDER URL
     const API_URL = 'https://tedlytics.onrender.com/api/collect'; 
 
     function sendData(type, extraData = {}) {
@@ -20,6 +19,9 @@
             ...extraData
         };
 
+        // Console log om te debuggen (Alleen lokaal zichtbaar)
+        console.log(`📡 Versturen [${type}]:`, extraData);
+
         if (navigator.sendBeacon && type === 'event') {
             const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
             navigator.sendBeacon(API_URL, blob);
@@ -28,79 +30,69 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
-            })
-            .then(res => res.json())
-            .then(response => {
-                if (type === 'pageview' && response.id) viewId = response.id;
-            })
-            .catch(e => console.error(e));
+            }).then(res => res.json()).then(res => {
+                if (type === 'pageview') viewId = res.id;
+            }).catch(e => console.error('Tracker Error:', e));
         }
     }
 
-    // 2. Initialisatie
     window.addEventListener('load', function() {
         sendData('pageview');
-        
-        setInterval(() => {
-            if (viewId && document.visibilityState === 'visible') sendData('ping');
-        }, 5000);
-        
+        setInterval(() => { if (viewId && document.visibilityState === 'visible') sendData('ping'); }, 5000);
         enableAutoTracking();
     });
 
-    // 3. DE "MAGISCHE" AUTO-TRACKER 🪄
     function enableAutoTracking() {
         document.addEventListener('click', function(event) {
             const target = event.target;
-            
-            // We zoeken naar het dichtstbijzijnde klikbare element (voor het geval je op een icoontje in een knop klikt)
-            const el = target.closest('a, button, input[type="submit"], input[type="button"]');
+            const el = target.closest('a, button, input[type="submit"]');
 
-            if (!el) return; // Er is nergens op geklikt wat ons boeit
+            if (!el) return;
 
-            // A. Check voor handmatige overrides (data-event gaat voor alles)
+            // 1. Handmatige data-event (Heeft voorrang)
             if (el.getAttribute('data-event')) {
                 sendData('event', { eventName: el.getAttribute('data-event') });
                 return;
             }
 
-            // B. Links (<a> tags)
+            // 2. Links (<a>)
             if (el.tagName === 'A') {
                 const href = el.getAttribute('href');
                 if (!href) return;
 
-                // 1. Externe Links
-                if (el.hostname !== window.location.hostname && href.startsWith('http')) {
-                    sendData('event', { eventName: 'Outbound Link: ' + el.hostname });
+                // Speciale links (Mail, Tel)
+                if (href.startsWith('mailto:') || href.startsWith('tel:')) {
+                    sendData('event', { eventName: 'Contact Klik' });
                     return;
                 }
 
-                // 2. Mailto / Tel
-                if (href.startsWith('mailto:')) {
-                    sendData('event', { eventName: 'Email Click' }); 
+                // Downloads
+                const ext = href.split('.').pop().toLowerCase();
+                if (['pdf', 'zip', 'docx'].includes(ext)) {
+                    sendData('event', { eventName: 'Download: ' + ext.toUpperCase() });
                     return;
                 }
-                
-                // 3. Bestandsdownloads (PDF, ZIP, etc)
-                const extension = href.split('.').pop().toLowerCase();
-                if (['pdf', 'zip', 'docx', 'xlsx', 'csv'].includes(extension)) {
-                    sendData('event', { eventName: 'Download: ' + extension.toUpperCase() });
+
+                // Externe Links
+                if (el.hostname && el.hostname !== window.location.hostname) {
+                    sendData('event', { eventName: 'Outbound: ' + el.hostname });
                     return;
+                }
+
+                // Interne Links (Nieuw! We tracken de tekst)
+                // We sturen dit alleen als het GEEN menu navigatie is (optioneel)
+                // Maar voor nu sturen we gewoon ALLES wat tekst heeft.
+                const text = el.innerText.trim();
+                if (text) {
+                    sendData('event', { eventName: 'Klik: ' + text });
                 }
             }
 
-            // C. Knoppen (<button> of <input>)
-            // Als het geen link is, maar wel een knop, tracken we de TEKST van de knop.
-            if (el.tagName === 'BUTTON' || el.tagName === 'INPUT') {
-                // Haal de tekst op (bijv "Koop Nu" of value="Verzend")
-                let buttonText = el.innerText || el.value || 'Onbekende Knop';
-                buttonText = buttonText.trim(); // Spaties weghalen
-
-                if (buttonText) {
-                    sendData('event', { eventName: 'Klik: ' + buttonText });
-                }
+            // 3. Knoppen (<button>)
+            if (el.tagName === 'BUTTON') {
+                const text = el.innerText.trim() || 'Knop';
+                sendData('event', { eventName: 'Klik: ' + text });
             }
         });
     }
-
 })();
