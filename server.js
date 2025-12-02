@@ -6,6 +6,7 @@ const basicAuth = require('express-basic-auth');
 const UAParser = require('ua-parser-js'); 
 const geoip = require('geoip-lite');
 const { countryCodeEmoji } = require('country-code-emoji'); 
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -128,14 +129,40 @@ app.post('/api/collect', async (req, res) => {
 });
 
 // 3. Real-Time API
-app.get('/api/realtime', async (req, res) => {
+// Dashboard Data API (Nu met filters!)
+app.get('/api/stats', async (req, res) => {
     try {
-        const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
-        const activeSessions = await PageView.distinct('sessionId', {
-            updatedAt: { $gte: threeMinutesAgo }
-        });
-        res.json({ visitors: activeSessions.length });
-    } catch (error) { res.status(500).json({ error: 'Realtime error' }); }
+        const { from, to, filterType, filterValue } = req.query;
+        const query = {};
+
+        // 1. Datum Filter
+        if (from || to) {
+            query.timestamp = {};
+            if (from) query.timestamp.$gte = new Date(from);
+            if (to) {
+                const endDate = new Date(to);
+                endDate.setHours(23, 59, 59, 999);
+                query.timestamp.$lte = endDate;
+            }
+        }
+
+        // 2. Drilldown Filter (AANGEPAST)
+        if (filterType && filterValue) {
+            const decodedValue = decodeURIComponent(filterValue);
+            
+            if (filterType === 'url') {
+                // Zoek of de URL in de database dit pad BEVAT
+                // $options: 'i' maakt het ongevoelig voor hoofdletters
+                query[filterType] = { $regex: decodedValue, $options: 'i' };
+            } else {
+                // Exacte match voor landen, browsers, etc.
+                query[filterType] = decodedValue;
+            }
+        }
+
+        const allViews = await PageView.find(query).sort({ timestamp: 1 });
+        res.json(allViews);
+    } catch (error) { res.status(500).json({ error: 'Kon data niet ophalen' }); }
 });
 
 // --- BEVEILIGD GEDEELTE (Dashboard) ---
@@ -165,7 +192,19 @@ app.get('/api/stats', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Kon data niet ophalen' }); }
 });
 
-// Dashboard HTML serveren
+// 1. Statische bestanden (plaatjes, scripts, css) mogen gewoon geladen worden
 app.use(express.static('public'));
+
+// 2. De Clean URL voor het dashboard
+// Als iemand naar '/dashboard' gaat, stuur dan dashboard.html
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
+// 3. Redirect (Optioneel)
+// Als iemand per ongeluk naar de root '/' gaat, stuur ze door naar het dashboard
+app.get('/', (req, res) => {
+    res.redirect('/dashboard');
+});
 
 app.listen(PORT, () => console.log(`Analytics server draait op poort ${PORT}`));
