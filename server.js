@@ -1,13 +1,21 @@
+console.log("🚀 START: Ik begin met het lezen van de code...");
+
 const express = require('express');
+console.log("✅ Express geladen");
 const cors = require('cors');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
+console.log("✅ Mongoose geladen");
 const basicAuth = require('express-basic-auth');
 const UAParser = require('ua-parser-js'); 
+console.log("✅ UAParser geladen");
 const geoip = require('geoip-lite');
+console.log("✅ GeoIP geladen (Dit was waarschijnlijk de boosdoener!)");
 const { countryCodeEmoji } = require('country-code-emoji'); 
 const path = require('path');
 require('dotenv').config();
+
+console.log("👉 Stap 1: Alle modules zijn succesvol ingeladen!");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,24 +24,24 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', true);
 
 // 2. CORS (Beveiliging)
-// Dit zorgt dat je tracker mag praten met de server
 app.use(cors({
     origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS']
 }));
 
-// 3. BODY PARSER (DIT WAS HET PROBLEEM!) 🚨
-// Deze regel zorgt dat 'req.body' gevuld wordt met data.
-// Hij MOET boven de routes staan.
+// 3. BODY PARSER
 app.use(express.json()); 
 
 // --- DATABASE VERBINDING ---
 const mongoURI = process.env.MONGO_URI;
 if (mongoURI) {
+    console.log("⏳ DATABASE: Ik ga nu proberen te verbinden met MongoDB...");
     mongoose.connect(mongoURI)
-        .then(() => console.log('✅ Verbonden met MongoDB Atlas'))
-        .catch(err => console.error('❌ Fout:', err));
+        .then(() => console.log('✅ DATABASE: Verbonden met MongoDB Atlas'))
+        .catch(err => console.error('❌ DATABASE FOUT:', err));
+} else {
+    console.log("⚠️ LET OP: Geen MONGO_URI gevonden in je .env bestand!");
 }
 
 // --- DATAMODEL ---
@@ -46,7 +54,7 @@ const PageViewSchema = new mongoose.Schema({
     os: String,
     device: String,
     country: String,
-    eventName: String, // Voor je custom events
+    eventName: String, 
     timestamp: { type: Date, default: Date.now },
     duration: { type: Number, default: 0 }
 }, { timestamps: true });
@@ -59,37 +67,31 @@ function generateDailyHash(ip, userAgent) {
     return crypto.createHmac('sha256', secret).update(ip + userAgent).digest('hex');
 }
 
-// --- ROUTES ---
+// --- OPEN ROUTES (Voor bezoekers) ---
 
 // 1. Tracker script serveren
 app.get('/tracker.js', (req, res) => {
     res.sendFile(__dirname + '/public/tracker.js');
 });
 
-// 2. Data Verzamelen (Het hart van het systeem)
+// 2. Data Verzamelen
 app.post('/api/collect', async (req, res) => {
     try {
-        // Dubbele check: als req.body leeg is, stop dan direct om crash te voorkomen
-        if (!req.body) {
-            return res.status(400).json({ error: 'Geen data ontvangen' });
-        }
+        if (!req.body) return res.status(400).json({ error: 'Geen data ontvangen' });
 
         const { type, url, referrer, sessionId, viewId, eventName } = req.body;
         
-        // Ping (Tijd update)
         if (type === 'ping' && viewId) {
             await PageView.findByIdAndUpdate(viewId, { $inc: { duration: 5 } });
             return res.status(200).json({ status: 'updated' });
         }
 
-        // Info verzamelen
         const userAgent = req.headers['user-agent'] || '';
         const ua = UAParser(userAgent);
         const browserName = ua.browser.name || 'Onbekend';
         const osName = ua.os.name || 'Onbekend';
         const deviceType = ua.device.type || 'desktop';
 
-        // GeoIP (Veilig verpakt in try/catch)
         let country = 'Onbekend';
         try {
             const ip = req.ip; 
@@ -107,7 +109,6 @@ app.post('/api/collect', async (req, res) => {
         const ip = req.ip; 
         const visitorId = generateDailyHash(ip, userAgent);
 
-        // Opslaan
         const newView = new PageView({
             visitorId, sessionId, url, 
             referrer: referrer || 'Direct',
@@ -128,14 +129,19 @@ app.post('/api/collect', async (req, res) => {
     }
 });
 
-// 3. Real-Time API
-// Dashboard Data API (Nu met filters!)
+
+// --- BEVEILIGD GEDEELTE (Alleen voor jou) ---
+app.use(basicAuth({
+    users: { 'admin': process.env.ADMIN_PASSWORD || 'geheim123' },
+    challenge: true
+}));
+
+// Dashboard Data API (Veilig achter wachtwoord)
 app.get('/api/stats', async (req, res) => {
     try {
         const { from, to, filterType, filterValue } = req.query;
         const query = {};
 
-        // 1. Datum Filter
         if (from || to) {
             query.timestamp = {};
             if (from) query.timestamp.$gte = new Date(from);
@@ -146,16 +152,11 @@ app.get('/api/stats', async (req, res) => {
             }
         }
 
-        // 2. Drilldown Filter (AANGEPAST)
         if (filterType && filterValue) {
             const decodedValue = decodeURIComponent(filterValue);
-            
             if (filterType === 'url') {
-                // Zoek of de URL in de database dit pad BEVAT
-                // $options: 'i' maakt het ongevoelig voor hoofdletters
                 query[filterType] = { $regex: decodedValue, $options: 'i' };
             } else {
-                // Exacte match voor landen, browsers, etc.
                 query[filterType] = decodedValue;
             }
         }
@@ -165,46 +166,21 @@ app.get('/api/stats', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Kon data niet ophalen' }); }
 });
 
-// --- BEVEILIGD GEDEELTE (Dashboard) ---
-app.use(basicAuth({
-    users: { 'admin': process.env.ADMIN_PASSWORD || 'geheim123' },
-    challenge: true
-}));
-
-// Dashboard Data API
-app.get('/api/stats', async (req, res) => {
-    try {
-        const { from, to } = req.query;
-        const query = {};
-
-        if (from || to) {
-            query.timestamp = {};
-            if (from) query.timestamp.$gte = new Date(from);
-            if (to) {
-                const endDate = new Date(to);
-                endDate.setHours(23, 59, 59, 999);
-                query.timestamp.$lte = endDate;
-            }
-        }
-
-        const allViews = await PageView.find(query).sort({ timestamp: 1 });
-        res.json(allViews);
-    } catch (error) { res.status(500).json({ error: 'Kon data niet ophalen' }); }
-});
-
-// 1. Statische bestanden (plaatjes, scripts, css) mogen gewoon geladen worden
+// Statische bestanden (Dashboard)
 app.use(express.static('public'));
 
-// 2. De Clean URL voor het dashboard
-// Als iemand naar '/dashboard' gaat, stuur dan dashboard.html
 app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// 3. Redirect (Optioneel)
-// Als iemand per ongeluk naar de root '/' gaat, stuur ze door naar het dashboard
 app.get('/', (req, res) => {
     res.redirect('/dashboard');
 });
 
-app.listen(PORT, () => console.log(`Analytics server draait op poort ${PORT}`));
+// --- SERVER STARTEN ---
+app.listen(PORT, () => {
+    console.log(`\n=========================================`);
+    console.log(`🚀 TEDLYTICS IS SUCCESVOL OPGESTART!`);
+    console.log(`📊 Bekijk je dashboard lokaal via: http://localhost:${PORT}/dashboard`);
+    console.log(`=========================================\n`);
+});

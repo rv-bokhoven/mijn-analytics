@@ -1,447 +1,1097 @@
 <!DOCTYPE html>
-<html lang="nl" class="dark">
+<html lang="nl" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
-    
-    <script>
-        if (localStorage.getItem('theme') === 'light') {
-            document.documentElement.classList.remove('dark');
-        } else {
-            document.documentElement.classList.add('dark');
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics · Mijn Website</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Sora', 'sans-serif'] },
-                    colors: {
-                        primary: '#ea580c', 
-                        darkBg: '#09090b',  
-                        darkCard: '#18181b', 
-                        darkBar: '#27272a'   
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
-        .pulsing-dot { position: relative; display: flex; align-items: center; justify-content: center; width: 10px; height: 10px; }
-        .pulsing-dot::before { content: ''; position: absolute; width: 100%; height: 100%; background-color: #22c55e; border-radius: 50%; z-index: 2; }
-        .pulsing-dot::after { content: ''; position: absolute; width: 100%; height: 100%; background-color: #22c55e; border-radius: 50%; animation: pulse-ring 2s infinite; z-index: 1; }
-        
-        body, div, p, h1, h2, h3, span, button, table, tr, td, th { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+:root {
+  --bg:        #ffffff;
+  --bg2:       #fafafa;
+  --bg3:       #f5f5f5;
+  --border:    #e8e8e8;
+  --border2:   #f0f0f0;
+  --text:      #0a0a0a;
+  --text2:     #6b6b6b;
+  --text3:     #adadad;
+  --accent:    #0a0a0a;
+  --green:     #16a34a;
+  --green-bg:  #f0fdf4;
+  --red:       #dc2626;
+  --red-bg:    #fef2f2;
+  --shadow:    0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --radius:    10px;
+}
 
-        .trend-badge { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 600; margin-left: 6px; vertical-align: middle; }
-        .trend-up { background-color: #dcfce7; color: #166534; } 
-        .dark .trend-up { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; }
-        .trend-down { background-color: #fee2e2; color: #991b1b; } 
-        .dark .trend-down { background-color: rgba(239, 68, 68, 0.2); color: #f87171; }
-        .trend-neutral { background-color: #f4f4f5; color: #71717a; } 
-        .dark .trend-neutral { background-color: rgba(161, 161, 170, 0.2); color: #a1a1aa; }
+[data-theme="dark"] {
+  --bg:        #111111;
+  --bg2:       #181818;
+  --bg3:       #222222;
+  --border:    #2a2a2a;
+  --border2:   #1e1e1e;
+  --text:      #f0f0f0;
+  --text2:     #888888;
+  --text3:     #444444;
+  --accent:    #f0f0f0;
+  --green:     #4ade80;
+  --green-bg:  rgba(74,222,128,0.08);
+  --red:       #f87171;
+  --red-bg:    rgba(248,113,113,0.08);
+  --shadow:    0 1px 3px rgba(0,0,0,0.3);
+}
 
-        .metric-tab.active { background-color: #fff7ed; border-bottom: 3px solid #ea580c; }
-        .metric-tab.active p.label { color: #ea580c; }
-        .dark .metric-tab.active { background-color: #18181b; border-bottom: 3px solid #fb923c; } 
-        .dark .metric-tab.active p.label { color: #fb923c; }
-        
-        .clickable-row { cursor: pointer; }
-        .clickable-row:hover .item-label { text-decoration: underline; }
-    </style>
+html, body {
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  transition: background .2s, color .2s;
+}
+
+/* ── Layout ── */
+.shell {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 0px;
+  /*border-bottom: 1px solid var(--border);*/
+  margin-bottom: 28px;
+  position: relative;
+  z-index: 1100;
+}
+
+.site-id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.site-favicon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  background: var(--bg2);
+  flex-shrink: 0;
+}
+
+.site-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -.02em;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Period dropdown ── */
+.period-dropdown { position: relative; }
+
+.period-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.period-trigger:hover { background: var(--bg3); }
+.period-trigger svg { color: var(--text3); flex-shrink: 0; }
+
+.period-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  min-width: 150px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
+  z-index: 1000;
+}
+[data-theme="dark"] .period-menu { box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.period-menu.open { display: block; }
+
+.period-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .1s;
+  font-family: 'Geist', sans-serif;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.period-option:hover { background: var(--bg2); color: var(--text); }
+.period-option.active { color: var(--text); font-weight: 600; background: var(--bg3); }
+.period-option .check { opacity: 0; font-size: 12px; }
+.period-option.active .check { opacity: 1; }
+
+/* ── Icon button ── */
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.icon-btn:hover { color: var(--text); background: var(--bg3); }
+
+/* ── Live pill ── */
+.live-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--green-bg);
+  background: var(--green-bg);
+  cursor: pointer;
+  transition: all .15s;
+}
+.live-pill:hover { border-color: var(--green); }
+
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  position: relative;
+}
+.live-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px; border-radius: 50%;
+  background: var(--green);
+  opacity: .25;
+  animation: pulse 2s ease-out infinite;
+}
+@keyframes pulse {
+  0%   { transform: scale(1); opacity: .25; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+.live-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green);
+  letter-spacing: -.01em;
+}
+
+/* ── Filter chip ── */
+.filter-chip {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  width: fit-content;
+  font-size: 12px;
+}
+.filter-chip.visible { display: flex; }
+.filter-chip-label { color: var(--text2); }
+.filter-chip-value { font-weight: 600; color: var(--text); }
+.filter-chip-clear {
+  margin-left: 4px; width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--border); border: none; cursor: pointer;
+  color: var(--text2); font-size: 10px; transition: all .12s;
+}
+.filter-chip-clear:hover { background: var(--red-bg); color: var(--red); }
+
+/* ── Stat grid ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  margin-bottom: 0;
+}
+
+.stat-cell {
+  background: var(--bg);
+  padding: 20px 20px 16px;
+  cursor: pointer;
+  position: relative;
+  transition: background .12s;
+}
+.stat-cell:first-child { border-radius: var(--radius) 0 0 0; }
+.stat-cell:last-child  { border-radius: 0 var(--radius) 0 0; }
+.stat-cell:hover { background: var(--bg2); }
+.stat-cell.static { cursor: default; }
+.stat-cell.active { background: var(--bg2); }
+.stat-cell.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text3);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.stat-cell.active .stat-label { color: var(--text2); }
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -.04em;
+  color: var(--text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-trend {
+  display: none;
+  align-items: center;
+  gap: 3px;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.stat-trend.visible { display: flex; }
+.stat-trend.up   { color: var(--green); }
+.stat-trend.down { color: var(--red); }
+.stat-trend.flat { color: var(--text3); }
+
+/* ── Chart card ── */
+.chart-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 20px 20px 16px;
+  margin-bottom: 24px;
+}
+.chart-wrap { height: 220px; }
+
+/* ── Data panels ── */
+.section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg);
+}
+.panel-full { grid-column: span 2; }
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 11px;
+  /*border-bottom: 1px solid var(--border2);*/
+}
+
+.panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+
+.panel-tabs { display: flex; gap: 2px; }
+
+.ptab2 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all .12s;
+}
+.ptab2:hover { color: var(--text2); background: var(--bg2); }
+.ptab2.active { color: var(--text); background: var(--bg3); }
+
+/* ── List rows ── */
+.list-body { max-height: 272px; overflow-y: auto; overflow-x: hidden; }
+.list-body::-webkit-scrollbar { width: 3px; }
+.list-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.list-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  cursor: pointer;
+  position: relative;
+  transition: background .1s;
+  gap: 10px;
+  overflow: hidden;
+}
+.list-row:hover { background: var(--bg2); }
+.list-row:hover .list-name { text-decoration: underline; text-decoration-color: var(--border); }
+
+.list-bar {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+  height: 28px;
+  max-width: calc(100% - 8px);
+  background: var(--bg3);
+  border-radius: 5px;
+  pointer-events: none;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+}
+[data-theme="dark"] .list-bar { background: rgba(255,255,255,.04); }
+
+.list-icon {
+  width: 14px; height: 14px;
+  object-fit: contain; flex-shrink: 0;
+  position: relative; z-index: 1;
+  border-radius: 2px;
+}
+.list-icon-svg {
+  width: 14px; height: 14px;
+  flex-shrink: 0; position: relative; z-index: 1;
+  fill: var(--text3);
+}
+.list-flag {
+  width: 16px; height: 12px;
+  object-fit: cover; border-radius: 2px;
+  flex-shrink: 0; position: relative; z-index: 1;
+}
+.list-name {
+  font-size: 13px;
+  font-weight: 450;
+  color: var(--text);
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  position: relative; z-index: 1;
+}
+.list-count {
+  font-size: 12px; font-weight: 600;
+  color: var(--text2); font-variant-numeric: tabular-nums;
+  flex-shrink: 0; position: relative; z-index: 1;
+}
+.list-pct {
+  font-size: 11px; color: var(--text3);
+  width: 36px; text-align: right;
+  flex-shrink: 0; position: relative; z-index: 1;
+}
+
+.empty {
+  padding: 28px 16px; text-align: center;
+  font-size: 12px; color: var(--text3);
+}
+
+/* ── Live block ── */
+.live-block {
+  display: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 24px;
+  background: var(--bg);
+}
+.live-block.visible { display: block; }
+
+.live-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 11px;
+  border-bottom: 1px solid var(--border2);
+}
+
+.live-table { width: 100%; border-collapse: collapse; }
+.live-table th {
+  padding: 8px 16px; text-align: left;
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .07em;
+  color: var(--text3); border-bottom: 1px solid var(--border2);
+  white-space: nowrap;
+}
+.live-table th:nth-last-child(-n+2) { text-align: right; }
+.live-table td {
+  padding: 8px 16px; font-size: 12px;
+  color: var(--text2); border-bottom: 1px solid var(--border2);
+  white-space: nowrap;
+}
+.live-table tr:last-child td { border-bottom: none; }
+.live-table tr:hover td { background: var(--bg2); }
+.live-table td:nth-last-child(-n+2) { text-align: right; }
+.live-table td:first-child { color: var(--text); font-weight: 500; }
+
+/* ── Footer ── */
+.footer {
+  text-align: center; margin-top: 48px;
+  font-size: 11px; color: var(--text3); letter-spacing: .02em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .stat-grid { grid-template-columns: repeat(3, 1fr); }
+  .section-grid { grid-template-columns: 1fr; }
+  .panel-full { grid-column: span 1; }
+  .header { flex-wrap: wrap; gap: 12px; }
+}
+@media (max-width: 400px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Fade in ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.shell > * { animation: fadeUp .35s ease both; }
+.shell > *:nth-child(2) { animation-delay: .05s; }
+.shell > *:nth-child(3) { animation-delay: .10s; }
+.shell > *:nth-child(4) { animation-delay: .15s; }
+.shell > *:nth-child(5) { animation-delay: .18s; }
+</style>
 </head>
-<body class="bg-zinc-50 text-zinc-800 dark:bg-darkBg dark:text-zinc-100 font-sans antialiased">
+<body>
+<div class="shell">
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        <div class="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg flex items-center justify-center shadow-sm text-xl">📊</div>
-                <div class="flex flex-col">
-                    <h1 class="text-xl font-bold text-zinc-900 dark:text-white leading-tight">Mijn Website</h1>
-                    
-                    <button onclick="toggleLiveBlock()" class="flex items-center gap-2 mt-1 group cursor-pointer focus:outline-none text-left">
-                        <div class="pulsing-dot"></div>
-                        <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
-                            <span id="liveCount" class="font-bold text-zinc-900 dark:text-white">0</span> live bezoekers
-                            <span class="text-xs text-zinc-400 ml-1">(Klik voor details)</span>
-                        </span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <div class="bg-white dark:bg-darkCard p-1 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-sm flex flex-wrap gap-1">
-                    <button onclick="setPeriod('today', this)" class="filter-btn px-3 py-1.5 text-sm font-medium rounded-md text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all">Vandaag</button>
-                    <button onclick="setPeriod('yesterday', this)" class="filter-btn px-3 py-1.5 text-sm font-medium rounded-md text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all">Gisteren</button>
-                    <button onclick="setPeriod(7, this)" class="filter-btn px-3 py-1.5 text-sm font-medium rounded-md text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 transition-all">7 Dagen</button>
-                    <button onclick="setPeriod(30, this)" class="filter-btn px-3 py-1.5 text-sm font-medium rounded-md text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all">30 Dagen</button>
-                    <button onclick="setPeriod('all', this)" class="filter-btn px-3 py-1.5 text-sm font-medium rounded-md text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all">Alles</button>
-                </div>
-                <button onclick="toggleTheme()" class="p-2 rounded-lg bg-white dark:bg-darkCard border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
-                    <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                </button>
-            </div>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="site-id">
+      <div class="site-favicon">T</div>
+      <span class="site-name">TEDLYTICS</span>
+    </div>
+    <div class="header-right">
+      <button class="live-pill" onclick="toggleLiveBlock()" title="Live bezoekers">
+        <div class="live-dot"></div>
+        <span class="live-text"><span id="liveCount">0</span> live</span>
+      </button>
+      <div class="period-dropdown" id="periodDropdown">
+        <button class="period-trigger" onclick="togglePeriodMenu()" id="periodTrigger">
+          <span id="periodLabel">7 dagen</span>
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="period-menu" id="periodMenu">
+          <button class="period-option" onclick="setPeriod('today',this,'Vandaag')">Vandaag <span class="check">✓</span></button>
+          <button class="period-option" onclick="setPeriod('yesterday',this,'Gisteren')">Gisteren <span class="check">✓</span></button>
+          <button class="period-option active" onclick="setPeriod(7,this,'7 dagen')">7 dagen <span class="check">✓</span></button>
+          <button class="period-option" onclick="setPeriod(30,this,'30 dagen')">30 dagen <span class="check">✓</span></button>
+          <button class="period-option" onclick="setPeriod(90,this,'90 dagen')">90 dagen <span class="check">✓</span></button>
+          <button class="period-option" onclick="setPeriod('all',this,'Alles')">Alles <span class="check">✓</span></button>
         </div>
+      </div>
+      <button class="icon-btn" onclick="toggleTheme()" title="Thema wisselen">
+        <svg id="icon-sun" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg id="icon-moon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="display:none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
 
-        <div id="filterContainer" class="hidden mb-6">
-            <div class="inline-flex items-center bg-white dark:bg-darkCard border border-zinc-200 dark:border-zinc-700 rounded-full px-4 py-1.5 shadow-sm">
-                <span class="text-sm text-zinc-500 dark:text-zinc-400 mr-2">Filter:</span>
-                <span id="filterLabel" class="text-sm font-semibold text-zinc-800 dark:text-zinc-100 mr-3"></span>
-                <button onclick="clearFilter()" class="text-zinc-400 hover:text-red-500 focus:outline-none"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            </div>
+  <!-- FILTER CHIP -->
+  <div class="filter-chip" id="filterChip">
+    <span class="filter-chip-label">Filter:</span>
+    <span class="filter-chip-value" id="filterLabel">—</span>
+    <button class="filter-chip-clear" onclick="clearFilter()">✕</button>
+  </div>
+
+  <!-- LIVE BLOCK -->
+  <div class="live-block" id="liveBlock">
+    <div class="live-block-head">
+      <div class="panel-title" style="display:flex;align-items:center;gap:7px;">
+        <div class="live-dot"></div>
+        Nu Online
+      </div>
+      <button class="icon-btn" onclick="toggleLiveBlock()">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="live-table">
+        <thead><tr>
+          <th>Land</th><th>Pagina</th><th>Apparaat</th><th>Browser</th><th>Duur</th><th>Tijd</th>
+        </tr></thead>
+        <tbody id="liveBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stat-grid">
+    <div class="stat-cell active" onclick="switchMetric('visitors',this)">
+      <div class="stat-label">Bezoekers</div>
+      <div class="stat-value" id="vVisitors">—</div>
+      <div class="stat-trend" id="tVisitors"></div>
+    </div>
+    <div class="stat-cell" onclick="switchMetric('views',this)">
+      <div class="stat-label">Pageviews</div>
+      <div class="stat-value" id="vViews">—</div>
+      <div class="stat-trend" id="tViews"></div>
+    </div>
+    <div class="stat-cell" onclick="switchMetric('visits',this)">
+      <div class="stat-label">Sessies</div>
+      <div class="stat-value" id="vVisits">—</div>
+      <div class="stat-trend" id="tVisits"></div>
+    </div>
+    <div class="stat-cell static">
+      <div class="stat-label">Bounce</div>
+      <div class="stat-value" id="vBounce">—</div>
+      <div class="stat-trend" id="tBounce"></div>
+    </div>
+    <div class="stat-cell static">
+      <div class="stat-label">Views / Sessie</div>
+      <div class="stat-value" id="vVPV">—</div>
+      <div class="stat-trend" id="tVPV"></div>
+    </div>
+    <div class="stat-cell static">
+      <div class="stat-label">Gem. Tijd</div>
+      <div class="stat-value" id="vDuration">—</div>
+      <div class="stat-trend" id="tDuration"></div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-card">
+    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+  </div>
+
+  <!-- DATA PANELS -->
+  <div class="section-grid">
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Pagina's</span></div>
+      <div class="list-body" id="pagesList"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Bronnen</span></div>
+      <div class="list-body" id="referrersList"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Landen</span></div>
+      <div class="list-body" id="countriesList"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-tabs">
+          <button class="ptab2 active" id="tab-browsers" onclick="switchDeviceTab('browsers')">Browsers</button>
+          <button class="ptab2" id="tab-devices" onclick="switchDeviceTab('devices')">Apparaten</button>
         </div>
+      </div>
+      <div class="list-body" id="deviceContainer"></div>
+    </div>
+    <div class="panel panel-full">
+      <div class="panel-head"><span class="panel-title">Events</span></div>
+      <div class="list-body" id="eventsList" style="max-height:180px"></div>
+    </div>
+  </div>
 
-        <div id="liveBlock" class="hidden bg-white dark:bg-darkCard rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm overflow-hidden flex flex-col mb-8 border-l-4 border-l-green-500">
-            <div class="px-5 py-4 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50 flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                    <h3 class="font-semibold text-zinc-700 dark:text-zinc-200">Nu Online</h3>
-                </div>
-                <button onclick="toggleLiveBlock()" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-zinc-600 dark:text-zinc-300">
-                    <thead class="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-700 text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400">
-                        <tr>
-                            <th class="px-5 py-3 text-left tracking-wide">Land</th>
-                            <th class="px-5 py-3 text-left tracking-wide">Huidige Pagina</th>
-                            <th class="px-5 py-3 text-left tracking-wide">Apparaat</th>
-                            <th class="px-5 py-3 text-left tracking-wide">Browser</th>
-                            <th class="px-5 py-3 text-right tracking-wide">Tijd actief</th>
-                            <th class="px-5 py-3 text-right tracking-wide">Laatst gezien</th>
-                        </tr>
-                    </thead>
-                    <tbody id="visitorLogBody" class="divide-y divide-zinc-50 dark:divide-zinc-700"></tbody>
-                </table>
-            </div>
-        </div>
+  <div class="footer">Analytics · eigen server</div>
+</div>
 
-        <div class="bg-white dark:bg-darkCard rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 mb-8 overflow-hidden transition-colors">
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 border-b border-zinc-100 dark:border-zinc-700">
-                <div onclick="switchChart('visitors')" class="metric-tab active cursor-pointer p-5 border-r border-b border-zinc-100 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
-                    <p class="label text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Unieke Bezoekers</p>
-                    <div class="flex items-baseline"><p class="text-2xl font-bold text-zinc-900 dark:text-white" id="uniqueVisitors">-</p><span id="trendVisitors" class="trend-badge hidden"></span></div>
-                </div>
-                <div onclick="switchChart('views')" class="metric-tab cursor-pointer p-5 border-r border-b border-zinc-100 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
-                    <p class="label text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Total Pageviews</p>
-                    <div class="flex items-baseline"><p class="text-2xl font-bold text-zinc-900 dark:text-white" id="totalViewsDisplay">-</p><span id="trendViews" class="trend-badge hidden"></span></div>
-                </div>
-                <div onclick="switchChart('visits')" class="metric-tab cursor-pointer p-5 border-r border-b border-zinc-100 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
-                    <p class="label text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Totaal Visits</p>
-                    <div class="flex items-baseline"><p class="text-2xl font-bold text-zinc-900 dark:text-white" id="totalVisits">-</p><span id="trendVisits" class="trend-badge hidden"></span></div>
-                </div>
-                <div class="p-5 border-r border-b border-zinc-100 dark:border-zinc-700 bg-white dark:bg-darkCard">
-                    <p class="label text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Views per Visit</p>
-                    <div class="flex items-baseline"><p class="text-2xl font-bold text-zinc-900 dark:text-white" id="viewsPerVisit">-</p><span id="trendVPV" class="trend-badge hidden"></span></div>
-                </div>
-                <div class="p-5 border-r border-b border-zinc-100 dark:border-zinc-700 bg-white dark:bg-darkCard">
-                    <p class="label text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Bounce Rate</p>
-                    <div class="flex items-baseline"><p class="text-2xl font-bold text-zinc-900 dark:text-white" id="bounceRate">-</p><span id="trendBounce" class="trend-badge hidden"></span></div>
-                </div>
-                <div class="p-5 border-b border-zinc-100 dark:border-zinc-700 bg-white dark:bg-darkCard">
-                    <p class="label text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Gem. Tijd</p>
-                    <div class="flex items-baseline"><p class="text-2xl font-bold text-zinc-900 dark:text-white" id="avgDuration">-</p><span id="trendDuration" class="trend-badge hidden"></span></div>
-                </div>
-            </div>
-            
-            <div class="p-6">
-                <h3 class="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-4" id="chartTitle">Verloop Unieke Bezoekers</h3>
-                <div class="w-full h-80"><canvas id="mainChart"></canvas></div>
-            </div>
-        </div>
+<script>
+/* ── State ── */
+let myChart = null;
+let chartV = {}, chartPV = {}, chartS = {};
+let currentMetric = 'visitors';
+let deviceData = { browsers: {}, devices: {} };
+let currentDeviceTab = 'browsers';
+let currentFrom = null, currentTo = null, currentUnit = 'day';
+let activeFilter = { type: null, value: null };
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <div class="bg-white dark:bg-darkCard rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm overflow-hidden flex flex-col">
-                <div class="px-5 py-4 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50"><h3 class="font-semibold text-zinc-700 dark:text-zinc-200">Top Landen</h3></div>
-                <div id="countriesList" class="flex-1 overflow-y-auto max-h-96"></div>
-            </div>
+/* ── Theme ── */
+(function(){
+  const saved = localStorage.getItem('theme') || 'light';
+  setTheme(saved, true);
+})();
 
-            <div class="bg-white dark:bg-darkCard rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm overflow-hidden flex flex-col">
-                <div class="px-5 py-4 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50"><h3 class="font-semibold text-zinc-700 dark:text-zinc-200">Top Pagina's</h3></div>
-                <div id="pagesList" class="flex-1 overflow-y-auto max-h-96"></div>
-            </div>
+function setTheme(t, init) {
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('theme', t);
+  document.getElementById('icon-sun').style.display  = t === 'dark'  ? 'none' : '';
+  document.getElementById('icon-moon').style.display = t === 'light' ? 'none' : '';
+  if (!init && myChart) switchMetric(currentMetric, document.querySelector('.stat-cell.active'));
+}
+function toggleTheme() {
+  setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+}
 
-            <div class="bg-white dark:bg-darkCard rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm overflow-hidden flex flex-col">
-                <div class="px-5 py-4 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50"><h3 class="font-semibold text-zinc-700 dark:text-zinc-200">Top Bronnen</h3></div>
-                <div id="referrersList" class="flex-1 overflow-y-auto max-h-96"></div>
-            </div>
+/* ── Icon helpers ── */
+function browserIcon(name) {
+  const n = name.toLowerCase();
+  const paths = { chrome:'/icons/chrome.svg', safari:'/icons/safari.svg', firefox:'/icons/firefox.svg', edge:'/icons/edge.svg', opera:'/icons/opera.svg', samsung:'/icons/samsung.svg' };
+  for (const [k,v] of Object.entries(paths)) if (n.includes(k)) return `<img class="list-icon" src="${v}" alt="" onerror="this.style.opacity=0">`;
+  return `<svg class="list-icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1.5"/></svg>`;
+}
+function deviceIcon(name) {
+  const n = name.toLowerCase();
+  if (n.includes('mobile')) return `<svg class="list-icon-svg" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="12" y1="18" x2="12" y2="18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  if (n.includes('tablet')) return `<svg class="list-icon-svg" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`;
+  return `<svg class="list-icon-svg" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="22" x2="16" y2="22" stroke="currentColor" stroke-width="1.5"/><line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" stroke-width="1.5"/></svg>`;
+}
+function flagImg(country) {
+  const code = country.split(' ').pop().toLowerCase();
+  return `<img class="list-flag" src="/icons/flags/${code}.svg" alt="" onerror="this.style.display='none'">`;
+}
 
-            <div class="bg-white dark:bg-darkCard rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm overflow-hidden flex flex-col">
-                <div class="px-5 py-4 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50 flex items-baseline gap-4">
-                    <button onclick="switchDeviceTab('browsers')" id="tab-browsers" class="font-semibold text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white focus:outline-none">Browsers</button>
-                    <button onclick="switchDeviceTab('devices')" id="tab-devices" class="text-sm font-medium text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 focus:outline-none">Apparaten</button>
-                </div>
-                <div id="deviceContainer" class="flex-1 overflow-y-auto max-h-96"></div>
-            </div>
+/* ── Live block ── */
+function toggleLiveBlock() {
+  const b = document.getElementById('liveBlock');
+  b.classList.toggle('visible');
+  if (b.classList.contains('visible')) {
+    b.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    loadLive();
+  }
+}
 
-            <div class="bg-white dark:bg-darkCard rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm overflow-hidden flex flex-col relative md:col-span-2">
-                <div class="px-5 py-4 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50"><h3 class="font-semibold text-zinc-700 dark:text-zinc-200">Top Doelen (Events)</h3></div>
-                <div id="eventsList" class="flex-1 overflow-y-auto max-h-96"></div>
-            </div>
+async function loadLive() {
+  try {
+    const res = await fetch('/api/stats?from=' + (currentFrom||'') + '&to=' + (currentTo||''));
+    const data = await res.json();
+    renderLiveTable(data);
+  } catch(e) {
+    document.getElementById('liveBody').innerHTML =
+      '<tr><td colspan="6" style="text-align:center;padding:20px;font-size:12px;color:var(--text3);">Geen data beschikbaar</td></tr>';
+  }
+}
 
-        </div>
-        
-        <div class="mt-12 mb-6 text-center text-xs text-zinc-400">Analytics powered by your own Node.js server.</div>
-    </main>
+function renderLiveTable(data) {
+  const tbody = document.getElementById('liveBody');
+  tbody.innerHTML = '';
+  const sessions = {};
+  data.forEach(v => {
+    if (!sessions[v.sessionId]) sessions[v.sessionId] = v;
+    else if (new Date(v.timestamp) > new Date(sessions[v.sessionId].timestamp)) {
+      const d = sessions[v.sessionId].duration || 0;
+      sessions[v.sessionId] = v;
+      sessions[v.sessionId].duration = Math.max(d, v.duration || 0);
+    }
+  });
+  const now = new Date();
+  const live = Object.values(sessions)
+    .filter(v => (now - new Date(v.timestamp)) < 300000)
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-    <script>
-        function toggleTheme() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light');
-            } else {
-                document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark');
-            }
-            switchChart(currentMetric); 
+  if (!live.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;font-size:12px;color:var(--text3);">Geen actieve bezoekers</td></tr>';
+    return;
+  }
+  live.forEach(v => {
+    const tr = document.createElement('tr');
+    const raw = v.country || 'Onbekend';
+    const code = raw.split(' ').pop().toLowerCase();
+    const fi = `<img src="/icons/flags/${code}.svg" style="width:13px;height:10px;object-fit:cover;border-radius:2px;margin-right:6px;vertical-align:middle;" onerror="this.style.display='none'">`;
+    const country = raw.split(' ').pop();
+    const dur = v.duration || 0;
+    const ds = dur < 60 ? `${dur}s` : `${Math.floor(dur/60)}m ${dur%60}s`;
+    const t = new Date(v.timestamp).toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit'});
+    let path = ''; try { path = new URL(v.url).pathname; } catch { path = v.url; }
+    tr.innerHTML = `
+      <td>${fi}${country}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--text2)">${path}</td>
+      <td>${v.device || ''}</td>
+      <td>${v.browser || ''}</td>
+      <td>${ds}</td>
+      <td>${t}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ── Render list ── */
+function renderList(id, obj, type = null) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  const sorted = Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  if (!sorted.length) { el.innerHTML = '<div class="empty">Geen data</div>'; return; }
+  const total = sorted.reduce((s, [,v]) => s + v, 0);
+  const max = sorted[0][1];
+  sorted.forEach(([label, count]) => {
+    const pct = Math.round((count / max) * 100);
+    const sharePct = Math.round((count / total) * 100);
+    const row = document.createElement('div');
+    row.className = 'list-row';
+
+    let ft = '';
+    if (id === 'pagesList') ft = 'url';
+    else if (id === 'countriesList') ft = 'country';
+    else if (id === 'referrersList') ft = 'referrer';
+    else if (id === 'eventsList') ft = 'eventName';
+    else if (type === 'browser') ft = 'browser';
+    else if (type === 'device') ft = 'device';
+    if (ft) row.onclick = () => setFilter(ft, label);
+
+    let icon = '', display = label;
+    if (type === 'browser') icon = browserIcon(label);
+    else if (type === 'device') icon = deviceIcon(label);
+    else if (type === 'country') { icon = flagImg(label); display = label.split(' ').pop(); }
+
+    row.innerHTML = `
+      <div class="list-bar" style="width:${pct}%"></div>
+      ${icon}
+      <span class="list-name" title="${label}">${display}</span>
+      <span class="list-count">${count}</span>
+      <span class="list-pct">${sharePct}%</span>`;
+    el.appendChild(row);
+  });
+}
+
+/* ── Chart ── */
+function renderChart(dataObj, metric) {
+  if (myChart) myChart.destroy();
+  const ctx = document.getElementById('mainChart');
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+  let keys = Object.keys(dataObj);
+  if (keys.length && keys[0].includes(':')) keys.sort();
+  else { const yr = new Date().getFullYear(); keys.sort((a, b) => new Date(a+' '+yr) - new Date(b+' '+yr)); }
+
+  const color = isDark ? '#e5e5e5' : '#0a0a0a';
+  const gridC = isDark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.05)';
+  const tickC = isDark ? '#555' : '#bbb';
+  const grad = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
+  grad.addColorStop(0, isDark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.06)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+  myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: keys,
+      datasets: [{
+        data: keys.map(k => dataObj[k]),
+        borderColor: color,
+        backgroundColor: grad,
+        borderWidth: 1.5,
+        tension: 0.35,
+        fill: true,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHitRadius: 20,
+        pointBackgroundColor: isDark ? '#111' : '#fff',
+        pointBorderColor: color,
+        pointBorderWidth: 1.5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: isDark ? '#1a1a1a' : '#fff',
+          padding: {x:12, y:8},
+          cornerRadius: 8,
+          titleFont: {family:'Geist', size:11, weight:'500'},
+          bodyFont: {family:'Geist', size:16, weight:'700'},
+          titleColor: isDark ? '#666' : '#aaa',
+          bodyColor: isDark ? '#f0f0f0' : '#0a0a0a',
+          borderColor: isDark ? '#2a2a2a' : '#e8e8e8',
+          borderWidth: 1,
+          displayColors: false,
+          intersect: false, mode: 'index',
         }
-
-        // --- NIEUW: Toggle Live Block ---
-        function toggleLiveBlock() {
-            const block = document.getElementById('liveBlock');
-            block.classList.toggle('hidden');
-            if (!block.classList.contains('hidden')) {
-                block.scrollIntoView({ behavior: 'smooth' });
-                loadData(currentFrom, currentTo, currentUnit); 
-            }
+      },
+      scales: {
+        y: {
+          beginAtZero: true, suggestedMax: 5,
+          grid: { color: gridC },
+          border: { display: false, dash: [4,4] },
+          ticks: { stepSize:1, maxTicksLimit:5, font:{family:'Geist', size:10, weight:'500'}, color:tickC }
+        },
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { maxRotation:0, autoSkip:true, maxTicksLimit:8, font:{family:'Geist', size:10, weight:'500'}, color:tickC }
         }
+      },
+      interaction: { intersect: false, mode: 'index' }
+    }
+  });
+}
 
-        let myChart = null;
-        let chartDataVisitors = {}, chartDataViews = {}, chartDataVisits = {};
-        let currentMetric = 'visitors';
-        let loadedDeviceData = { browsers: {}, devices: {} }; 
-        let currentDeviceTab = 'browsers';
-        let currentFrom = null, currentTo = null, currentUnit = 'day';
-        let activeFilter = { type: null, value: null };
+function switchMetric(m, el) {
+  currentMetric = m;
+  document.querySelectorAll('.stat-cell:not(.static)').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const data = m === 'visitors' ? chartV : m === 'views' ? chartPV : chartS;
+  renderChart(data, m);
+}
 
-        function getBrowserIconPath(label) { const name = label.toLowerCase(); if (name.includes('chrome')) return '/icons/chrome.svg'; if (name.includes('safari')) return '/icons/safari.svg'; if (name.includes('firefox')) return '/icons/firefox.svg'; if (name.includes('edge')) return '/icons/edge.svg'; if (name.includes('opera')) return '/icons/opera.svg'; if (name.includes('samsung')) return '/icons/samsung.svg'; if (name.includes('android')) return '/icons/android.svg'; return null; }
-        function getDeviceIconSvg(label) { const l = label.toLowerCase(); const icons = { mobile: '<path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>', tablet: '<path d="M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-2 14H5V6h14v12z"/>', desktop: '<path d="M20 18c1.1 0 1.99-.9 1.99-2L22 5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2H0c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2h-4zM4 5h16v11H4V5z"/>' }; if (l.includes('mobile')) return icons.mobile; if (l.includes('tablet')) return icons.tablet; return icons.desktop; }
-        function getCountryIconPath(label) { const code = label.split(' ').pop().toLowerCase(); return `/icons/flags/${code}.svg`; }
+/* ── Device tab ── */
+function switchDeviceTab(tab) {
+  currentDeviceTab = tab;
+  document.getElementById('tab-browsers').classList.toggle('active', tab === 'browsers');
+  document.getElementById('tab-devices').classList.toggle('active', tab === 'devices');
+  renderList('deviceContainer', tab === 'browsers' ? deviceData.browsers : deviceData.devices, tab === 'browsers' ? 'browser' : 'device');
+}
 
-        // --- RENDER VISITOR LOG (MET LIVE FILTER) ---
-        function renderVisitorLog(data) {
-            const tbody = document.getElementById('visitorLogBody'); tbody.innerHTML = '';
-            
-            // 1. Group by Session
-            const sessions = {};
-            data.forEach(view => {
-                if (!sessions[view.sessionId]) sessions[view.sessionId] = view;
-                else if (new Date(view.timestamp) > new Date(sessions[view.sessionId].timestamp)) {
-                    const oldDur = sessions[view.sessionId].duration || 0;
-                    sessions[view.sessionId] = view;
-                    sessions[view.sessionId].duration = Math.max(oldDur, view.duration || 0);
-                }
-            });
+/* ── Trend ── */
+function showTrend(id, curr, prev, inverse = false) {
+  const el = document.getElementById(id);
+  if (!prev || prev === 0) { el.classList.remove('visible'); return; }
+  el.classList.add('visible');
+  el.classList.remove('up', 'down', 'flat');
+  const pct = Math.round(((curr - prev) / prev) * 100);
+  if (pct === 0) { el.textContent = '±0%'; el.classList.add('flat'); return; }
+  const good = inverse ? pct < 0 : pct > 0;
+  el.textContent = `${pct > 0 ? '↑' : '↓'} ${Math.abs(pct)}%`;
+  el.classList.add(good ? 'up' : 'down');
+}
 
-            // 2. FILTER: Alleen Live bezoekers (laatste 5 minuten)
-            const now = new Date();
-            const liveSessions = Object.values(sessions).filter(v => {
-                const diff = now - new Date(v.timestamp);
-                return diff < (5 * 60 * 1000); // 5 min
-            }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+/* ── Metrics calculation ── */
+function calcMetrics(data) {
+  const ids = new Set(), sess = {};
+  data.forEach(v => {
+    ids.add(v.visitorId);
+    if (!sess[v.sessionId]) sess[v.sessionId] = {views:0, dur:0};
+    sess[v.sessionId].views++;
+    sess[v.sessionId].dur += (v.duration || 0);
+  });
+  const total = Object.keys(sess).length;
+  let single = 0, dur = 0;
+  Object.values(sess).forEach(s => { if (s.views === 1) single++; dur += s.dur; });
+  return {
+    visitors: ids.size,
+    views: data.length,
+    visits: total,
+    vpv: total ? (data.length / total).toFixed(1) : 0,
+    bounce: total ? Math.round((single / total) * 100) : 0,
+    duration: total ? Math.round(dur / total) : 0,
+  };
+}
 
-            if (liveSessions.length === 0) { 
-                tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-4 text-center text-zinc-400">Er zijn momenteel geen actieve bezoekers.</td></tr>'; 
-                return; 
-            }
+/* ── Process data ── */
+function processData(data, timeUnit) {
+  const counts = {pages:{}, refs:{}, devs:{}, brows:{}, countries:{}, events:{}};
+  chartV = {}; chartPV = {}; chartS = {};
+  const sTemp = {};
 
-            liveSessions.forEach(visit => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors border-b border-zinc-50 dark:border-zinc-700 last:border-0';
-                
-                const browserPath = getBrowserIconPath(visit.browser);
-                const browserIcon = browserPath ? `<img src="${browserPath}" class="w-4 h-4 object-contain mr-2 block">` : '';
-                const deviceIcon = `<svg class="w-4 h-4 fill-zinc-400 mr-2 block" viewBox="0 0 24 24">${getDeviceIconSvg(visit.device)}</svg>`;
-                const rawCountry = visit.country || 'Onbekend';
-                const countryPath = getCountryIconPath(rawCountry);
-                const countryIcon = `<img src="${countryPath}" class="w-4 h-4 object-contain mr-2 block rounded-full" onerror="this.style.display='none'">`;
-                const cleanCountryName = rawCountry.split(' ').pop();
-                const visitTime = new Date(visit.timestamp);
-                const timeString = visitTime.toLocaleTimeString('nl-NL', {hour: '2-digit', minute:'2-digit'});
-                const dur = visit.duration || 0; let durString = dur < 60 ? `${dur}s` : `${Math.floor(dur/60)}m ${dur%60}s`; if (dur === 0) durString = 'net binnen';
-                
-                // Status is altijd groen hier want we filteren op live
-                const statusDot = `<span class="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>`;
+  if (currentFrom && currentTo) {
+    let s = new Date(currentFrom), e = new Date(currentTo);
+    if (timeUnit === 'hour') {
+      for (let i = 0; i < 24; i++) {
+        const h = i.toString().padStart(2,'0') + ':00';
+        chartPV[h] = 0; chartV[h] = new Set(); sTemp[h] = new Set();
+      }
+    } else {
+      while (s <= e) {
+        const k = s.toLocaleDateString('nl-NL', {day:'numeric', month:'short'});
+        chartPV[k] = 0; chartV[k] = new Set(); sTemp[k] = new Set();
+        s.setDate(s.getDate() + 1);
+      }
+    }
+  }
 
-                tr.innerHTML = `<td class="px-5 py-3 align-middle whitespace-nowrap text-sm font-medium text-zinc-700 dark:text-zinc-300"><div class="flex items-center">${countryIcon}${cleanCountryName}</div></td><td class="px-5 py-3 align-middle whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400"><div class="flex items-center">${statusDot}<span class="truncate max-w-[150px] inline-block" title="${visit.url}">${new URL(visit.url).pathname}</span></div></td><td class="px-5 py-3 align-middle whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400"><div class="flex items-center">${deviceIcon}<span>${visit.device}</span></div></td><td class="px-5 py-3 align-middle whitespace-nowrap text-sm text-zinc-600 dark:text-zinc-400"><div class="flex items-center">${browserIcon}<span>${visit.browser}</span></div></td><td class="px-5 py-3 align-middle whitespace-nowrap text-right text-sm font-mono text-zinc-500 dark:text-zinc-400"><div class="flex items-center justify-end"><svg class="w-3 h-3 text-zinc-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${durString}</div></td><td class="px-5 py-3 align-middle whitespace-nowrap text-right text-xs text-zinc-400">${timeString}</td>`;
-                tbody.appendChild(tr);
-            });
-        }
+  data.forEach(v => {
+    const co = v.country || 'Onbekend';
+    if (!counts.countries[co]) counts.countries[co] = new Set();
+    counts.countries[co].add(v.visitorId);
 
-        function renderList(elementId, dataObj, listType = null) { 
-            const container = document.getElementById(elementId); container.innerHTML = ''; 
-            const sorted = Object.entries(dataObj).sort((a, b) => b[1] - a[1]).slice(0, 10);
-            if (sorted.length === 0) { container.innerHTML = '<div class="p-6 text-center text-zinc-400 text-sm">Nog geen data beschikbaar</div>'; return; }
-            const maxVal = sorted[0][1]; 
-            sorted.forEach(([label, count]) => {
-                const percentage = Math.round((count / maxVal) * 100);
-                const div = document.createElement('div');
-                div.className = 'relative flex justify-between items-center px-5 py-3 border-b border-zinc-50 dark:border-zinc-700 last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors group cursor-pointer';
-                
-                let filterType = '';
-                if (elementId === 'pagesList') filterType = 'url';
-                else if (elementId === 'countriesList') filterType = 'country';
-                else if (elementId === 'referrersList') filterType = 'referrer';
-                else if (elementId === 'eventsList') filterType = 'eventName';
-                else if (listType === 'browser') filterType = 'browser';
-                else if (listType === 'device') filterType = 'device';
-                if (filterType) div.onclick = () => setFilter(filterType, label);
+    let p = ''; try { p = new URL(v.url).pathname; } catch { p = v.url; }
+    if (!counts.pages[p]) counts.pages[p] = new Set();
+    counts.pages[p].add(v.visitorId);
 
-                let iconHtml = ''; const iconStyle = 'width: 16px; height: 16px; margin-right: 12px; object-fit: contain; display: block; flex-shrink: 0;';
-                let displayLabel = label;
-                if (listType === 'browser') { const imgPath = getBrowserIconPath(label); if (imgPath) iconHtml = `<img src="${imgPath}" style="${iconStyle}" alt="">`; else iconHtml = `<svg style="${iconStyle}" class="fill-current text-zinc-300" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-1.07 3.97-2.9 5.39z"/></svg>`; } else if (listType === 'device') { const svgPath = getDeviceIconSvg(label); iconHtml = `<svg style="${iconStyle}" class="fill-current text-zinc-400" viewBox="0 0 24 24">${svgPath}</svg>`; } else if (listType === 'country') { const flagPath = getCountryIconPath(label); iconHtml = `<img src="${flagPath}" style="${iconStyle}" class="rounded-full" onerror="this.style.display='none'">`; displayLabel = label.split(' ').pop(); }
-                div.innerHTML = `<div class="absolute top-0 left-0 bottom-0 bg-orange-50/60 dark:bg-darkBar z-0 transition-all duration-500 rounded-r-md" style="width: ${percentage}%"></div><div class="relative z-10 flex items-center min-w-0 pr-4 flex-1">${iconHtml}<span class="text-sm font-medium text-zinc-700 dark:text-zinc-300 truncate item-label" title="${label}">${displayLabel}</span></div><span class="relative z-10 text-sm text-zinc-600 dark:text-zinc-400 font-bold font-variant-numeric flex-shrink-0 ml-2">${count}</span>`;
-                container.appendChild(div);
-            });
-        }
+    let ref = v.referrer;
+    if (!ref || ref === 'Direct') ref = 'Direct';
+    else try { ref = new URL(ref).hostname; } catch {}
+    if (!counts.refs[ref]) counts.refs[ref] = new Set();
+    counts.refs[ref].add(v.visitorId);
 
-        function switchChart(metric) { currentMetric = metric; document.querySelectorAll('.metric-tab').forEach(el => { el.classList.remove('active'); el.querySelector('.label').classList.remove('text-primary'); }); event.currentTarget.classList.add('active'); let title = 'Verloop'; let data = {}; if (metric === 'visitors') { title = 'Verloop Unieke Bezoekers'; data = chartDataVisitors; } else if (metric === 'views') { title = 'Verloop Total Pageviews'; data = chartDataViews; } else if (metric === 'visits') { title = 'Verloop Totaal Visits (Sessies)'; data = chartDataVisits; } document.getElementById('chartTitle').innerText = title; renderChart(data, metric); }
-        function switchDeviceTab(tab) { currentDeviceTab = tab; const btnB = document.getElementById('tab-browsers'); const btnD = document.getElementById('tab-devices'); const activeClass = ['font-semibold', 'text-zinc-700', 'dark:text-zinc-200', 'text-base']; const inactiveClass = ['font-medium', 'text-zinc-400', 'text-sm']; if (tab === 'browsers') { btnB.classList.add(...activeClass); btnB.classList.remove(...inactiveClass); btnD.classList.remove(...activeClass); btnD.classList.add(...inactiveClass); renderList('deviceContainer', loadedDeviceData.browsers, 'browser'); } else { btnD.classList.add(...activeClass); btnD.classList.remove(...inactiveClass); btnB.classList.remove(...activeClass); btnB.classList.add(...inactiveClass); renderList('deviceContainer', loadedDeviceData.devices, 'device'); } }
-        function calculateMetrics(data) { const uniqueIds = new Set(); const sessions = {}; data.forEach(view => { uniqueIds.add(view.visitorId); if (!sessions[view.sessionId]) sessions[view.sessionId] = { views: 0, duration: 0 }; sessions[view.sessionId].views++; sessions[view.sessionId].duration += (view.duration || 0); }); const totalSessions = Object.keys(sessions).length; let singlePage = 0, totalDur = 0; Object.values(sessions).forEach(s => { if(s.views===1) singlePage++; totalDur += s.duration; }); const vpv = totalSessions ? (data.length / totalSessions).toFixed(1) : 0; return { visitors: uniqueIds.size, views: data.length, visits: totalSessions, vpv: vpv, bounce: totalSessions ? Math.round((singlePage/totalSessions)*100) : 0, duration: totalSessions ? Math.round(totalDur / totalSessions) : 0 }; }
-        function renderTrend(elementId, current, previous, inverse = false) { const el = document.getElementById(elementId); if (previous === 0) { el.classList.add('hidden'); return; } el.classList.remove('hidden', 'trend-up', 'trend-down', 'trend-neutral'); const diff = current - previous; const percentage = Math.round((diff / previous) * 100); if (percentage === 0) { el.innerText = '0%'; el.classList.add('trend-neutral'); return; } const arrow = percentage > 0 ? '↑' : '↓'; el.innerText = `${arrow} ${Math.abs(percentage)}%`; let isGood = percentage > 0; if (inverse) isGood = !isGood; if (percentage > 0) el.classList.add(isGood ? 'trend-up' : 'trend-down'); else el.classList.add(isGood ? 'trend-up' : 'trend-down'); }
-        
-        function processData(data, timeUnit = 'day') {
-            const counts = { pages: {}, referrers: {}, devices: {}, browsers: {}, countries: {}, events: {} };
-            chartDataVisitors = {}; chartDataViews = {}; chartDataVisits = {}; 
-            const chartDataVisitsTemp = {}; 
-            
-            if (currentFrom && currentTo) {
-                let start = new Date(currentFrom);
-                let end = new Date(currentTo);
-                if (timeUnit === 'hour') {
-                    for(let i=0; i<24; i++) {
-                        const h = i.toString().padStart(2, '0') + ':00';
-                        chartDataViews[h] = 0; chartDataVisitors[h] = new Set(); chartDataVisitsTemp[h] = new Set();
-                    }
-                } else {
-                    while (start <= end) {
-                        const dayKey = start.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
-                        chartDataViews[dayKey] = 0; chartDataVisitors[dayKey] = new Set(); chartDataVisitsTemp[dayKey] = new Set();
-                        start.setDate(start.getDate() + 1);
-                    }
-                }
-            }
+    const dev = v.device || 'Onbekend';
+    if (!counts.devs[dev]) counts.devs[dev] = new Set();
+    counts.devs[dev].add(v.visitorId);
 
-            data.forEach(view => {
-                const country = view.country || 'Onbekend'; if(!counts.countries[country]) counts.countries[country] = new Set(); counts.countries[country].add(view.visitorId);
-                const p = new URL(view.url).pathname; if(!counts.pages[p]) counts.pages[p] = new Set(); counts.pages[p].add(view.visitorId);
-                let ref = view.referrer; if (!ref || ref.includes(window.location.hostname) || ref === 'Direct') ref = 'Direct'; else try { ref = new URL(ref).hostname; } catch {} if(!counts.referrers[ref]) counts.referrers[ref] = new Set(); counts.referrers[ref].add(view.visitorId);
-                const dev = view.device || 'Onbekend'; if(!counts.devices[dev]) counts.devices[dev] = new Set(); counts.devices[dev].add(view.visitorId);
-                const brow = view.browser || 'Onbekend'; if(!counts.browsers[brow]) counts.browsers[brow] = new Set(); counts.browsers[brow].add(view.visitorId);
-                if (view.eventName) { if (!counts.events[view.eventName]) counts.events[view.eventName] = new Set(); counts.events[view.eventName].add(view.visitorId); }
+    const brow = v.browser || 'Onbekend';
+    if (!counts.brows[brow]) counts.brows[brow] = new Set();
+    counts.brows[brow].add(v.visitorId);
 
-                const dateObj = new Date(view.timestamp);
-                let key; if (timeUnit === 'hour') key = dateObj.getHours().toString().padStart(2, '0') + ':00'; else key = dateObj.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
-                if (chartDataViews[key] === undefined) { chartDataViews[key] = 0; chartDataVisitors[key] = new Set(); chartDataVisitsTemp[key] = new Set(); }
-                chartDataViews[key]++; chartDataVisitors[key].add(view.visitorId); chartDataVisitsTemp[key].add(view.sessionId);
-            });
+    if (v.eventName) {
+      if (!counts.events[v.eventName]) counts.events[v.eventName] = new Set();
+      counts.events[v.eventName].add(v.visitorId);
+    }
 
-            Object.keys(chartDataVisitors).forEach(k => { if(chartDataVisitors[k] instanceof Set) chartDataVisitors[k] = chartDataVisitors[k].size; });
-            Object.keys(chartDataVisitsTemp).forEach(k => { if(chartDataVisitsTemp[k] instanceof Set) chartDataVisits[k] = chartDataVisitsTemp[k].size; else chartDataVisits[k] = chartDataVisitsTemp[k]; });
+    const d = new Date(v.timestamp);
+    const key = timeUnit === 'hour'
+      ? d.getHours().toString().padStart(2,'0') + ':00'
+      : d.toLocaleDateString('nl-NL', {day:'numeric', month:'short'});
 
-            const convert = (obj) => { const n={}; Object.keys(obj).forEach(k=>n[k]=obj[k].size); return n; };
-            renderList('countriesList', convert(counts.countries), 'country'); renderList('pagesList', convert(counts.pages)); renderList('referrersList', convert(counts.referrers)); renderList('eventsList', convert(counts.events));
-            loadedDeviceData.browsers = convert(counts.browsers); loadedDeviceData.devices = convert(counts.devices);
-            
-            renderVisitorLog(data);
-            switchDeviceTab(currentDeviceTab);
-            let dataToRender; if(currentMetric === 'visitors') dataToRender = chartDataVisitors; else if(currentMetric === 'views') dataToRender = chartDataViews; else if(currentMetric === 'visits') dataToRender = chartDataVisits;
-            renderChart(dataToRender, currentMetric);
-        }
+    if (chartPV[key] === undefined) { chartPV[key] = 0; chartV[key] = new Set(); sTemp[key] = new Set(); }
+    chartPV[key]++;
+    chartV[key].add(v.visitorId);
+    sTemp[key].add(v.sessionId);
+  });
 
-        function renderChart(dataObj, metricType) { 
-            if (myChart) myChart.destroy(); 
-            const ctx = document.getElementById('mainChart'); 
-            let sortedKeys = Object.keys(dataObj); 
-            if (sortedKeys.length > 0 && sortedKeys[0].includes(':')) sortedKeys.sort(); else { const currentYear = new Date().getFullYear(); sortedKeys.sort((a,b) => { const dateA = new Date(a + " " + currentYear); const dateB = new Date(b + " " + currentYear); return dateA - dateB; }); }
-            
-            const isDark = document.documentElement.classList.contains('dark');
-            let color = isDark ? '#fb923c' : '#ea580c'; 
-            if (metricType === 'views') color = isDark ? '#34d399' : '#10B981'; 
-            if (metricType === 'visits') color = isDark ? '#38bdf8' : '#0ea5e9'; 
+  Object.keys(chartV).forEach(k => { if (chartV[k] instanceof Set) chartV[k] = chartV[k].size; });
+  Object.keys(sTemp).forEach(k => { chartS[k] = sTemp[k] instanceof Set ? sTemp[k].size : sTemp[k]; });
 
-            const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400); 
-            gradient.addColorStop(0, color + '33'); gradient.addColorStop(1, color + '00'); 
-            let label = 'Unieke Bezoekers'; if (metricType === 'views') label = 'Total Pageviews'; if (metricType === 'visits') label = 'Totaal Visits'; 
-            
-            myChart = new Chart(ctx, { 
-                type: 'line', 
-                data: { labels: sortedKeys, datasets: [{ label: label, data: sortedKeys.map(d => dataObj[d]), borderColor: color, backgroundColor: gradient, borderWidth: 3, tension: 0.3, fill: true, pointRadius: 0, pointHoverRadius: 6, pointHitRadius: 20, pointBackgroundColor: isDark ? '#1e293b' : '#fff', pointBorderColor: color, pointBorderWidth: 2 }] }, 
-                options: { 
-                    responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: { display: false }, tooltip: { backgroundColor: isDark ? '#27272a' : '#1E293B', padding: 12, titleFont: {family:'Sora', size:13}, bodyFont: {family:'Sora', size:14, weight:'bold'}, displayColors: false, intersect: false, mode: 'index' } }, 
-                    scales: { 
-                        y: { beginAtZero: true, suggestedMax: 5, grid: { borderDash: [4, 4], color: isDark ? '#27272a' : '#E2E8F0' }, ticks: { stepSize: 1, font: {family: 'Sora', weight:'500'}, color: isDark ? '#a1a1aa' : '#64748B' } }, 
-                        x: { grid: { display: false }, ticks: { font: {family: 'Sora', weight:'500'}, color: isDark ? '#a1a1aa' : '#64748B', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } } 
-                    }, interaction: { intersect: false, mode: 'index' } 
-                } 
-            }); 
-        }
-        
-        function fmt(date) { return date.toISOString().split('T')[0]; }
-        
-        function setFilter(type, value) {
-            activeFilter = { type, value };
-            document.getElementById('filterContainer').classList.remove('hidden');
-            const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
-            document.getElementById('filterLabel').innerText = `${typeLabel}: ${value}`;
-            loadData(currentFrom, currentTo, currentUnit);
-        }
+  const cv = obj => { const n = {}; Object.keys(obj).forEach(k => n[k] = obj[k].size); return n; };
+  renderList('pagesList', cv(counts.pages));
+  renderList('referrersList', cv(counts.refs));
+  renderList('countriesList', cv(counts.countries), 'country');
+  renderList('eventsList', cv(counts.events));
+  deviceData.browsers = cv(counts.brows);
+  deviceData.devices = cv(counts.devs);
+  switchDeviceTab(currentDeviceTab);
+  switchMetric(currentMetric, document.querySelector('.stat-cell.active'));
+}
 
-        function clearFilter() {
-            activeFilter = { type: null, value: null };
-            document.getElementById('filterContainer').classList.add('hidden');
-            loadData(currentFrom, currentTo, currentUnit);
-        }
+/* ── Filter ── */
+function setFilter(type, value) {
+  activeFilter = {type, value};
+  document.getElementById('filterChip').classList.add('visible');
+  document.getElementById('filterLabel').textContent = value;
+  loadData(currentFrom, currentTo, currentUnit);
+}
+function clearFilter() {
+  activeFilter = {type: null, value: null};
+  document.getElementById('filterChip').classList.remove('visible');
+  loadData(currentFrom, currentTo, currentUnit);
+}
 
-        function setPeriod(range, btn) { document.querySelectorAll('.filter-btn').forEach(b => { b.classList.remove('text-orange-600', 'dark:text-orange-400', 'bg-orange-50', 'dark:bg-orange-900/30'); b.classList.add('text-zinc-500', 'dark:text-zinc-400'); }); btn.classList.remove('text-zinc-500', 'dark:text-zinc-400'); btn.classList.add('text-orange-600', 'dark:text-orange-400', 'bg-orange-50', 'dark:bg-orange-900/30'); const now = new Date(); let from = null; let to = null; let unit = 'day'; if (range === 'today') { from = fmt(now); to = fmt(now); unit = 'hour'; } else if (range === 'yesterday') { now.setDate(now.getDate() - 1); from = fmt(now); to = fmt(now); unit = 'hour'; } else if (range === 'all') { /* null */ } else { to = fmt(now); now.setDate(now.getDate() - range); from = fmt(now); } loadData(from, to, unit); }
-        async function loadData(from, to, timeUnit = 'day') { 
-            currentFrom = from; currentTo = to; currentUnit = timeUnit;
-            try { 
-                let url = '/api/stats'; 
-                const params = new URLSearchParams();
-                if (from) params.append('from', from);
-                if (to) params.append('to', to);
-                if (activeFilter.type && activeFilter.value) {
-                    params.append('filterType', activeFilter.type);
-                    params.append('filterValue', encodeURIComponent(activeFilter.value));
-                }
-                url += '?' + params.toString();
+/* ── Period dropdown ── */
+function togglePeriodMenu() {
+  document.getElementById('periodMenu').classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('periodDropdown');
+  if (dd && !dd.contains(e.target)) document.getElementById('periodMenu').classList.remove('open');
+});
 
-                let prevUrl = null; 
-                if (from && to) { 
-                    const startCurrent = new Date(from); const endCurrent = new Date(to); const diffTime = Math.abs(endCurrent - startCurrent); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; const endPrev = new Date(startCurrent); endPrev.setDate(endPrev.getDate() - 1); const startPrev = new Date(endPrev); startPrev.setDate(startPrev.getDate() - (diffDays - 1)); 
-                    const prevParams = new URLSearchParams();
-                    prevParams.append('from', fmt(startPrev)); prevParams.append('to', fmt(endPrev));
-                    if (activeFilter.type && activeFilter.value) { prevParams.append('filterType', activeFilter.type); prevParams.append('filterValue', encodeURIComponent(activeFilter.value)); }
-                    prevUrl = '/api/stats?' + prevParams.toString();
-                } 
-                
-                const promises = [fetch(url)]; if (prevUrl) promises.push(fetch(prevUrl)); else document.querySelectorAll('.trend-badge').forEach(e => e.classList.add('hidden')); 
-                const responses = await Promise.all(promises); const currData = await responses[0].json(); const prevData = responses[1] ? await responses[1].json() : []; 
-                const currStats = calculateMetrics(currData); const prevStats = calculateMetrics(prevData); 
-                document.getElementById('uniqueVisitors').innerText = currStats.visitors; document.getElementById('totalViewsDisplay').innerText = currStats.views; document.getElementById('totalVisits').innerText = currStats.visits; document.getElementById('viewsPerVisit').innerText = currStats.vpv; document.getElementById('bounceRate').innerText = currStats.bounce + '%'; document.getElementById('avgDuration').innerText = `${Math.floor(currStats.duration/60)}m ${currStats.duration%60}s`; 
-                if (prevData.length > 0 || (prevUrl && prevData.length === 0)) { renderTrend('trendVisitors', currStats.visitors, prevStats.visitors); renderTrend('trendViews', currStats.views, prevStats.views); renderTrend('trendVisits', currStats.visits, prevStats.visits); renderTrend('trendVPV', currStats.vpv, prevStats.vpv); renderTrend('trendBounce', currStats.bounce, prevStats.bounce, true); renderTrend('trendDuration', currStats.duration, prevStats.duration); } 
-                processData(currData, timeUnit); 
-            } catch (err) { console.error("Load error:", err); } 
-        }
-        
-        async function checkRealtime() { try { const res = await fetch('/api/realtime'); const data = await res.json(); document.getElementById('liveCount').innerText = data.visitors; if(data.visitors > 0) document.title = `(${data.visitors}) Analytics`; else document.title = 'Analytics'; } catch(e) {} }
+function fmt(d) { return d.toISOString().split('T')[0]; }
 
-        const defaultBtn = document.querySelectorAll('.filter-btn')[2]; 
-        setPeriod(7, defaultBtn); 
-        checkRealtime(); setInterval(checkRealtime, 5000);
-    </script>
+function setPeriod(range, btn, label) {
+  document.querySelectorAll('.period-option').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('periodLabel').textContent = label;
+  document.getElementById('periodMenu').classList.remove('open');
+  const now = new Date();
+  let from = null, to = null, unit = 'day';
+  if (range === 'today')     { from = fmt(now); to = fmt(now); unit = 'hour'; }
+  else if (range === 'yesterday') { now.setDate(now.getDate()-1); from = fmt(now); to = fmt(now); unit = 'hour'; }
+  else if (range === 'all')  { /* null */ }
+  else { to = fmt(now); now.setDate(now.getDate() - range); from = fmt(now); }
+  loadData(from, to, unit);
+}
+
+/* ── Load data (echte API) ── */
+async function loadData(from, to, unit = 'day') {
+  currentFrom = from; currentTo = to; currentUnit = unit;
+  try {
+    const p = new URLSearchParams();
+    if (from) p.append('from', from);
+    if (to)   p.append('to', to);
+    if (activeFilter.type && activeFilter.value) {
+      p.append('filterType', activeFilter.type);
+      p.append('filterValue', encodeURIComponent(activeFilter.value));
+    }
+
+    let prevUrl = null;
+    if (from && to) {
+      const s = new Date(from), e = new Date(to);
+      const diff = Math.ceil(Math.abs(e - s) / 864e5) + 1;
+      const ep = new Date(s); ep.setDate(ep.getDate() - 1);
+      const sp = new Date(ep); sp.setDate(sp.getDate() - (diff - 1));
+      const pp = new URLSearchParams();
+      pp.append('from', fmt(sp)); pp.append('to', fmt(ep));
+      if (activeFilter.type && activeFilter.value) {
+        pp.append('filterType', activeFilter.type);
+        pp.append('filterValue', encodeURIComponent(activeFilter.value));
+      }
+      prevUrl = '/api/stats?' + pp.toString();
+    }
+
+    const reqs = [fetch('/api/stats?' + p.toString())];
+    if (prevUrl) reqs.push(fetch(prevUrl));
+    else document.querySelectorAll('.stat-trend').forEach(el => el.classList.remove('visible'));
+
+    const responses = await Promise.all(reqs);
+    const curr = await responses[0].json();
+    const prev = responses[1] ? await responses[1].json() : [];
+
+    const cs = calcMetrics(curr), ps = calcMetrics(prev);
+
+    document.getElementById('vVisitors').textContent = cs.visitors;
+    document.getElementById('vViews').textContent    = cs.views;
+    document.getElementById('vVisits').textContent   = cs.visits;
+    document.getElementById('vBounce').textContent   = cs.bounce + '%';
+    document.getElementById('vVPV').textContent      = cs.vpv;
+    document.getElementById('vDuration').textContent = `${Math.floor(cs.duration/60)}m ${cs.duration%60}s`;
+
+    if (prev.length) {
+      showTrend('tVisitors', cs.visitors, ps.visitors);
+      showTrend('tViews',    cs.views,    ps.views);
+      showTrend('tVisits',   cs.visits,   ps.visits);
+      showTrend('tBounce',   cs.bounce,   ps.bounce, true);
+      showTrend('tVPV',      cs.vpv,      ps.vpv);
+      showTrend('tDuration', cs.duration, ps.duration);
+    }
+
+    processData(curr, unit);
+  } catch(e) { console.error('loadData fout:', e); }
+}
+
+/* ── Realtime ── */
+async function checkLive() {
+  try {
+    const r = await fetch('/api/realtime');
+    const d = await r.json();
+    document.getElementById('liveCount').textContent = d.visitors;
+    document.title = d.visitors > 0 ? `(${d.visitors}) Analytics` : 'Analytics · Mijn Website';
+  } catch {}
+}
+
+/* ── Init ── */
+setPeriod(7, document.querySelector('.period-option.active'), '7 dagen');
+checkLive();
+setInterval(checkLive, 5000);
+</script>
 </body>
 </html>
