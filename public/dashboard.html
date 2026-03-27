@@ -708,17 +708,20 @@ async function loadLive() {
 function renderLiveTable(data) {
   const tbody = document.getElementById('liveBody');
   tbody.innerHTML = '';
-  const sessions = {};
+  
+
+  const visitors = {};
   data.forEach(v => {
-    if (!sessions[v.sessionId]) sessions[v.sessionId] = v;
-    else if (new Date(v.timestamp) > new Date(sessions[v.sessionId].timestamp)) {
-      const d = sessions[v.sessionId].duration || 0;
-      sessions[v.sessionId] = v;
-      sessions[v.sessionId].duration = Math.max(d, v.duration || 0);
+    if (!visitors[v.visitorId]) visitors[v.visitorId] = v;
+    else if (new Date(v.timestamp) > new Date(visitors[v.visitorId].timestamp)) {
+      const d = visitors[v.visitorId].duration || 0;
+      visitors[v.visitorId] = v;
+      visitors[v.visitorId].duration = Math.max(d, v.duration || 0);
     }
   });
+  
   const now = new Date();
-  const live = Object.values(sessions)
+  const live = Object.values(visitors)
     .filter(v => (now - new Date(v.timestamp)) < 300000)
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
@@ -726,6 +729,7 @@ function renderLiveTable(data) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;font-size:12px;color:var(--text3);">Geen actieve bezoekers</td></tr>';
     return;
   }
+  
   live.forEach(v => {
     const tr = document.createElement('tr');
     const raw = v.country || 'Onbekend';

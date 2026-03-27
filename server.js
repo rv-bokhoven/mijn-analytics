@@ -173,7 +173,7 @@ app.get('/api/realtime', async (req, res) => {
         const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000);
         
         // Vraag aan de database hoeveel UNIEKE sessies er sinds die tijd actief waren
-        const activeSessions = await PageView.distinct('sessionId', {
+        const activeSessions = await PageView.distinct('visitorId', {
             timestamp: { $gte: fiveMinsAgo }
         });
         
