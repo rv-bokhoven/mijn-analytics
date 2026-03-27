@@ -166,6 +166,24 @@ app.get('/api/stats', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Kon data niet ophalen' }); }
 });
 
+// Realtime Data API (Voor het knipperende bolletje)
+app.get('/api/realtime', async (req, res) => {
+    try {
+        // Bereken de tijd van 5 minuten geleden
+        const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000);
+        
+        // Vraag aan de database hoeveel UNIEKE sessies er sinds die tijd actief waren
+        const activeSessions = await PageView.distinct('sessionId', {
+            timestamp: { $gte: fiveMinsAgo }
+        });
+        
+        // Stuur het aantal terug naar het dashboard
+        res.json({ visitors: activeSessions.length });
+    } catch (error) { 
+        res.status(500).json({ visitors: 0 }); 
+    }
+});
+
 // Statische bestanden (Dashboard)
 app.use(express.static('public'));
 
